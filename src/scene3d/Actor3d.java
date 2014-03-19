@@ -20,7 +20,6 @@ import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.collision.BoundingBox;
-import com.badlogic.gdx.scenes.scene2d.EventListener;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.DelayedRemovalArray;
 
@@ -28,7 +27,7 @@ public class Actor3d extends ModelInstance{
 	private Stage3d stage3d;
 	private Group3d parent;
 	
-	private final DelayedRemovalArray<EventListener> listeners = new DelayedRemovalArray<EventListener>(0);
+	private final DelayedRemovalArray<Event3dListener> listeners = new DelayedRemovalArray<Event3dListener>(0);
 	private final Array<Action3d> actions3d = new Array<Action3d>(0);
 	
 	private String name;
@@ -92,7 +91,7 @@ public class Actor3d extends ModelInstance{
 	 * 
 	 * @see InputListener
 	 * @see ClickListener */
-	public boolean addListener(EventListener listener) {
+	public boolean addListener(Event3dListener listener) {
 		if (!listeners.contains(listener, true)) {
 			listeners.add(listener);
 			return true;
@@ -100,11 +99,11 @@ public class Actor3d extends ModelInstance{
 		return false;
 	}
 
-	public boolean removeListener (EventListener listener) {
+	public boolean removeListener (Event3dListener listener) {
 		return listeners.removeValue(listener, true);
 	}
 
-	public Array<EventListener> getListeners () {
+	public Array<Event3dListener> getListeners () {
 		return listeners;
 	}
 	

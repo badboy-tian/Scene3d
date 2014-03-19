@@ -29,7 +29,7 @@ import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
 
-public class Stage3d extends InputAdapter implements Disposable{
+public class Stage3d extends InputAdapter implements Disposable {
 	private float viewportX, viewportY, viewportWidth, viewportHeight;
 	private float width, height;
 	private float gutterWidth, gutterHeight;
@@ -180,13 +180,13 @@ public class Stage3d extends InputAdapter implements Disposable{
 
 	/** Adds a listener to the root.
 	 * @see Actor#addListener(EventListener) */
-	public boolean addListener (EventListener listener) {
+	public boolean addListener (Event3dListener listener) {
 		return root.addListener(listener);
 	}
 
 	/** Removes a listener from the root.
 	 * @see Actor#removeListener(EventListener) */
-	public boolean removeListener (EventListener listener) {
+	public boolean removeListener (Event3dListener listener) {
 		return root.removeListener(listener);
 	}
 	

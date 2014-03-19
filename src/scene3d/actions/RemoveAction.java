@@ -11,6 +11,7 @@ public class RemoveAction extends Action3d {
         private Actor3d targetActor;
         private Action3d action;
 
+        @Override
         public boolean act (float delta) {
                 (targetActor != null ? targetActor : actor3d).removeAction3d(action);
                 return true;
@@ -29,10 +30,11 @@ public class RemoveAction extends Action3d {
                 return action;
         }
 
-        public void setAction (Action3d action) {
+        public void setAction(Action3d action) {
                 this.action = action;
         }
 
+        @Override
         public void reset () {
                 super.reset();
                 targetActor = null;

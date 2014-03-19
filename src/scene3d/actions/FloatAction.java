@@ -19,10 +19,12 @@ public class FloatAction extends TemporalAction {
                 this.end = end;
         }
 
+        @Override
         protected void begin () {
                 value = start;
         }
 
+        @Override
         protected void update (float percent) {
                 value = start + (end - start) * percent;
         }

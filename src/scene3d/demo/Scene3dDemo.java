@@ -20,7 +20,6 @@ import scene3d.Actor3d;
 import scene3d.Group3d;
 import scene3d.Stage3d;
 import scene3d.actions.Actions3d;
-import scene3d.actions.SequenceAction;
 
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
@@ -81,17 +80,23 @@ public class Scene3dDemo implements ApplicationListener {
     	actor2 = new Actor3d(model, 10f, 0f, 0f);
     	camController = new CameraInputController(stage3d.getCamera());
         Gdx.input.setInputProcessor(camController);
+        stage3d.addActor3d(actor1);
+        stage3d.addActor3d(actor2);
     	testActor3d();
     	//testGroup3d();
     	//testStage3d();
     }
     
     void testActor3d(){
-    	stage3d.addActor3d(actor1);
-        stage3d.addActor3d(actor2);
+        actor1.addAction3d(Actions3d.forever(Actions3d.sequence(Actions3d.moveBy(7f, 0f, 0f, 2f),
+        		Actions3d.moveBy(-7f, 0f, 0f, 2f))));
+        actor1.addAction3d(Actions3d.sequence(
+        		Actions3d.moveBy(7f, 0f, 0f, 2f),
+        		Actions3d.scaleTo(0.5f, 0.5f, 0.5f, 5f),
+        		Actions3d.moveBy(-7f, 0f, 0f, 2f)));
     	//actor1.addAction3d(Actions3d.scaleTo(1.2f, 1.2f, 1.2f, 1f));
     	//actor2.addAction3d(Actions3d.scaleBy(0.3f, 0.3f, 0.3f, 5f));
-       actor1.addAction3d(Actions3d.sequence(Actions3d.moveBy(7f, 0f, 0f, 2f), Actions3d.moveBy(-7f, 0f, 0f, 2f)));
+       //actor1.addAction3d(Actions3d.sequence(Actions3d.moveBy(7f, 0f, 0f, 2f), Actions3d.moveBy(-7f, 0f, 0f, 2f)));
         //actor1.addAction3d(Actions3d.moveTo(7f, 0f, 0f, 3f));
        // actor1.addAction3d(Actions3d.moveTo(-10f, 0f, 0f, 2f));
         /*
@@ -134,7 +139,7 @@ public class Scene3dDemo implements ApplicationListener {
     	stage3d.draw();
     	camController.update();
     	fpsText.setText("Fps: " + Gdx.graphics.getFramesPerSecond());
-    	Gdx.app.log("", ""+actor1.getX());
+    	Gdx.app.log("", ""+actor1.getScaleX());
     }
      
     @Override

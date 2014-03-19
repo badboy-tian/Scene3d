@@ -25,6 +25,7 @@ abstract public class TemporalAction extends Action3d {
                 this.interpolation = interpolation;
         }
 
+        @Override
         public boolean act (float delta) {
                 if (complete) return true;
                 Pool pool = getPool();
@@ -70,12 +71,14 @@ abstract public class TemporalAction extends Action3d {
                 time = duration;
         }
 
+        @Override
         public void restart () {
                 time = 0;
                 began = false;
                 complete = false;
         }
 
+        @Override
         public void reset () {
                 super.reset();
                 reverse = false;

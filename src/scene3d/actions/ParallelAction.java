@@ -79,7 +79,6 @@ public class ParallelAction extends Action3d {
                 actions.clear();
         }
 
-        
         public void addAction (Action3d action) {
                 actions.add(action);
                 if (actor3d != null) 

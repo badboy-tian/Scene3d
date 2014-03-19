@@ -10,6 +10,7 @@ public class RemoveActorAction extends Action3d {
         private Actor3d removeActor;
         private boolean removed;
 
+        @Override
         public boolean act (float delta) {
                 if (!removed) {
                         removed = true;
@@ -18,10 +19,12 @@ public class RemoveActorAction extends Action3d {
                 return true;
         }
 
+        @Override
         public void restart () {
                 removed = false;
         }
 
+        @Override
         public void reset () {
                 super.reset();
                 removeActor = null;

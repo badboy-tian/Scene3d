@@ -8,6 +8,7 @@ public class AddAction extends Action3d {
         private Actor3d targetActor;
         private Action3d action;
 
+        @Override
         public boolean act (float delta) {
                 (targetActor != null ? targetActor : actor3d).addAction3d(action);
                 return true;
@@ -34,6 +35,7 @@ public class AddAction extends Action3d {
                 if (action != null) action.restart();
         }
 
+        @Override
         public void reset () {
                 super.reset();
                 targetActor = null;

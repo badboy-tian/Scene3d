@@ -21,6 +21,7 @@ package scene3d.actions;
 public class RotateByAction extends RelativeTemporalAction {
         private float amount;
 
+        @Override
         protected void updateRelative (float percentDelta) {
                 actor3d.rotate(amount * percentDelta);
         }

@@ -8,18 +8,21 @@ import com.badlogic.gdx.utils.Array;
 /** Executes an action only after all other actions on the actor at the time this action was added have finished.
  * @author Nathan Sweet */
 public class AfterAction extends DelegateAction {
-        private Array<Action3d> waitForActions = new Array(false, 4);
+        private Array<Action3d> waitForActions = new Array<Action3d>(false, 4);
 
-        public void setActor (Actor3d actor) {
-                if (actor != null) waitForActions.addAll(actor.getActions3d());
-                super.setActor(actor);
+        @Override
+        public void setActor3d(Actor3d actor3d) {
+             if (actor3d != null) waitForActions.addAll(actor3d.getActions3d());
+             super.setActor3d(actor3d);
         }
 
+        @Override
         public void restart () {
                 super.restart();
                 waitForActions.clear();
         }
 
+        @Override
         protected boolean delegate (float delta) {
                 Array<Action3d> currentActions = actor3d.getActions3d();
                 if (currentActions.size == 1) waitForActions.clear();

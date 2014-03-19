@@ -8,6 +8,7 @@ import scene3d.Action3d;
 public class VisibleAction extends Action3d {
         private boolean visible;
 
+        @Override
         public boolean act (float delta) {
                 actor3d.setVisible(visible);
                 return true;

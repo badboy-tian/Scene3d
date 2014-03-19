@@ -6,10 +6,12 @@ package scene3d.actions;
 public class RotateToAction extends TemporalAction {
         private float start, end;
 
+        @Override
         protected void begin () {
                 start = actor3d.getRotation();
         }
 
+        @Override
         protected void update (float percent) {
                 actor3d.setRotation(start + (end - start) * percent);
         }

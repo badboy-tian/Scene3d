@@ -6,6 +6,7 @@ package scene3d.actions;
 public class MoveByAction extends RelativeTemporalAction {
         private float amountX, amountY, amountZ;
 
+        @Override
         protected void updateRelative (float percentDelta) {
                 actor3d.translate(amountX * percentDelta, amountY * percentDelta, amountZ * percentDelta);
         }

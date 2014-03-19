@@ -4,6 +4,7 @@ public class MoveToAction extends TemporalAction {
     private float startX, startY, startZ;
     private float endX, endY, endZ;
 
+    @Override
     protected void begin () {
     	if(actor3d != null){
     		startX = actor3d.getX();
@@ -12,6 +13,7 @@ public class MoveToAction extends TemporalAction {
     	}
     }
 
+    @Override
     protected void update (float percent) {
     	if(actor3d != null){
         actor3d.setPosition(startX + (endX - startX) * percent, startY + (endY - startY) * percent,
@@ -19,6 +21,7 @@ public class MoveToAction extends TemporalAction {
     	}
     }
 
+    
     public void setPosition (float x, float y, float z) {
             endX = x;
             endY = y;

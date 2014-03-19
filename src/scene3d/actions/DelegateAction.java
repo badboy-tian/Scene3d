@@ -22,6 +22,7 @@ abstract public class DelegateAction extends Action3d {
 
         abstract protected boolean delegate (float delta);
 
+        @Override
         public final boolean act (float delta) {
                 Pool pool = getPool();
                 setPool(null); // Ensure this action can't be returned to the pool inside the delegate action.
@@ -32,20 +33,24 @@ abstract public class DelegateAction extends Action3d {
                 }
         }
 
+        @Override
         public void restart () {
                 if (action != null) action.restart();
         }
 
+        @Override
         public void reset () {
                 super.reset();
                 action = null;
         }
 
-        public void setActor (Actor3d actor) {
-                if (action != null) action.setActor3d(actor);
-                super.setActor3d(actor);
+        @Override
+        public void setActor3d (Actor3d actor3d) {
+            if (action != null) action.setActor3d(actor3d);
+            super.setActor3d(actor3d);
         }
 
+        @Override
         public String toString () {
                 return super.toString() + (action == null ? "" : "(" + action + ")");
         }

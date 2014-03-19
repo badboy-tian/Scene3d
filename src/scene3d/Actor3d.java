@@ -219,7 +219,6 @@ public class Actor3d extends ModelInstance{
 	
 	public void setRotation(float degrees) {
 		this.rotation = degrees;
-		Matrix4 mat = new Matrix4();
 		this.rotate(degrees);
 		transform.setToRotation(originX, originY, originZ, rotation);
 	}
@@ -234,14 +233,14 @@ public class Actor3d extends ModelInstance{
 		this.scaleX = scaleX;
 		this.scaleY = scaleY;
 		this.scaleZ = scaleZ;
-		transform.scale(scaleX, scaleY, scaleZ);
+		transform.setToScaling(scaleX, scaleY, scaleZ);
 	}
 	
 	public void setScale(float scale) {
 		this.scaleX = scale;
 		this.scaleY = scale;
 		this.scaleZ = scale;
-		transform.scale(scaleX, scaleY, scaleZ);
+		transform.setToScaling(scaleX, scaleY, scaleZ);
 	}
 	
 	/** Adds the specified scale to the current scale. */
@@ -249,19 +248,20 @@ public class Actor3d extends ModelInstance{
 		scaleX += scale;
 		scaleY += scale;
 		scaleZ += scale;
-		transform.scl(scale);
+		transform.scl(scale); // re-implement this
 	}
 	
 	public void scale(float scaleX, float scaleY, float scaleZ) {
 		this.scaleX += scaleX;
 		this.scaleY += scaleY;
 		this.scaleZ += scaleZ;
-		transform.scl(scaleX, scaleY, scaleZ);
+		transform.scl(scaleX, scaleY, scaleZ); // re-implement this
 	}
 	
 	
 	public void setX (float x) {
-		this.x = x;transform.setToTranslation(x, y, z);
+		this.x = x;
+		transform.setToTranslation(x, y, z);
 	}
 	
 	public float getX () {
@@ -269,7 +269,8 @@ public class Actor3d extends ModelInstance{
 	}
 	
 	public void setY (float y) {
-		this.y = y;transform.setToTranslation(x, y, z);
+		this.y = y;
+		transform.setToTranslation(x, y, z);
 	}
 	
 	public float getY () {
@@ -277,7 +278,8 @@ public class Actor3d extends ModelInstance{
 	}
 	
 	public void setZ (float z) {
-		this.z = z;transform.setToTranslation(x, y, z);
+		this.z = z;
+		transform.setToTranslation(x, y, z);
 	}
 	
 	public float getZ (){

@@ -33,6 +33,7 @@ import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.utils.CameraInputController;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
+import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
@@ -88,12 +89,15 @@ public class Scene3dDemo implements ApplicationListener {
     }
     
     void testActor3d(){
-        actor1.addAction3d(Actions3d.forever(Actions3d.sequence(Actions3d.moveBy(7f, 0f, 0f, 2f),
-        		Actions3d.moveBy(-7f, 0f, 0f, 2f))));
+    	//actor1.addAction3d(Actions3d.rotateTo(60f, 5f));
+    	//actor1.addAction3d(Actions3d.scaleBy(0.5f, 0.5f, 0.5f, 5f, Interpolation.linear));
+        //actor1.addAction3d(Actions3d.forever(Actions3d.sequence(Actions3d.moveBy(7f, 0f, 0f, 2f),
+        //		Actions3d.moveBy(-7f, 0f, 0f, 2f))));
         actor1.addAction3d(Actions3d.sequence(
         		Actions3d.moveBy(7f, 0f, 0f, 2f),
         		Actions3d.scaleTo(0.5f, 0.5f, 0.5f, 5f),
         		Actions3d.moveBy(-7f, 0f, 0f, 2f)));
+    	
     	//actor1.addAction3d(Actions3d.scaleTo(1.2f, 1.2f, 1.2f, 1f));
     	//actor2.addAction3d(Actions3d.scaleBy(0.3f, 0.3f, 0.3f, 5f));
        //actor1.addAction3d(Actions3d.sequence(Actions3d.moveBy(7f, 0f, 0f, 2f), Actions3d.moveBy(-7f, 0f, 0f, 2f)));

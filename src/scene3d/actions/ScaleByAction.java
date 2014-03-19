@@ -1,5 +1,7 @@
 package scene3d.actions;
 
+import com.badlogic.gdx.Gdx;
+
 
 /** Scales an actor's scale to a relative size.
  * @author Nathan Sweet */

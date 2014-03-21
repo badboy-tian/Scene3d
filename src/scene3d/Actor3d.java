@@ -1,29 +1,16 @@
-/*******************************************************************************
- * Copyright 2011 See AUTHORS file.
- * 
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * 
- *   http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- ******************************************************************************/
-
 package scene3d;
-
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
-import com.badlogic.gdx.math.Matrix4;
+import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.math.collision.BoundingBox;
+import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.DelayedRemovalArray;
 
-public class Actor3d extends ModelInstance{
+
+public class Actor3d extends ModelInstance {
 	private Stage3d stage3d;
 	private Group3d parent;
 	
@@ -33,13 +20,12 @@ public class Actor3d extends ModelInstance{
 	private String name;
 	private boolean visible = true;
 	
-	float x, y, z;
-	float width, height, depth;
-	float originX, originY, originZ;
-	float scaleX = 1, scaleY = 1, scaleZ = 1;
-	float rotation = 0;
+	private float x, y, z;
+	private float originX, originY, originZ;
+	private float scaleX = 1, scaleY = 1, scaleZ = 1;
+	private float rotation = 0;
 	
-	BoundingBox boundBox;
+	private BoundingBox boundBox;
 	
 	public Actor3d(){
 		super(new Model());
@@ -81,9 +67,9 @@ public class Actor3d extends ModelInstance{
 	}
 
 	/** Removes this actor3d from its parent, if it has a parent.
-	 * @see Group#removeActor(Actor) */
+	 * @see Group#removeActor3d(Actor3d) */
 	public boolean remove () {
-		if (parent != null) return parent.removeActor(this);
+		if (parent != null) return parent.removeActor3d(this);
 		return false;
 	}
 	
@@ -351,43 +337,6 @@ public class Actor3d extends ModelInstance{
 		return name;
 	}
 	
-	public void setWidth (float width) {
-		//for(Mesh m: model.meshes)
-		//	m.scale(width, arg1, arg2);
-		this.width = width;
-	}
-
-	public void setHeight (float height) {
-		this.height = height;
-	}
-	
-	public float getWidth () {
-		return width;
-	}
-	public float getHeight () {
-		return height;
-	}
-	public float getDepth () {
-		return depth;
-	}
-
-
-	/** Sets the width and height. */
-	public void setSize (float width, float height) {
-	}
-
-	/** Adds the specified size to the current size. */
-	public void size (float size) {
-		width += size;
-		height += size;
-	}
-
-	/** Adds the specified size to the current size. */
-	public void size (float width, float height) {
-		this.width += width;
-		this.height += height;
-	}
-	
 	public String toString () {
 		String name = this.name;
 		if (name == null) {
@@ -396,5 +345,18 @@ public class Actor3d extends ModelInstance{
 			if (dotIndex != -1) name = name.substring(dotIndex + 1);
 		}
 		return name;
+	}
+	
+	public Color getColor(){
+		return ((ColorAttribute)getMaterial("Color").get(ColorAttribute.Diffuse)).color;
+	}
+	
+	public void setColor(Color color){
+		ColorAttribute ca = new ColorAttribute(ColorAttribute.Diffuse, color);
+		if(getMaterial("Color") != null)
+			getMaterial("Color").set(ca);
+		else
+			materials.add(new Material("Color", ca));
+			model.materials.add(new Material("Color", ca));
 	}
 }

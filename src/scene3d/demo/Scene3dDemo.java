@@ -33,7 +33,6 @@ import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.utils.CameraInputController;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
-import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
@@ -73,10 +72,10 @@ public class Scene3dDemo implements ApplicationListener {
     	//3dstuff
     	stage3d = new Stage3d();
     	modelBuilder = new ModelBuilder();
-    	model = modelBuilder.createBox(5f, 5f, 5f, new Material(ColorAttribute.createDiffuse(Color.WHITE)),
+    	model = modelBuilder.createBox(5f, 5f, 5f, new Material("Color", ColorAttribute.createDiffuse(Color.WHITE)),
                 Usage.Position | Usage.Normal);
     	actor1 = new Actor3d(model, 0f, 0f, 0f);
-    	model = modelBuilder.createBox(2f, 2f, 2f, new Material(ColorAttribute.createDiffuse(Color.WHITE)),
+    	model = modelBuilder.createBox(2f, 2f, 2f, new Material("Color", ColorAttribute.createDiffuse(Color.WHITE)),
                 Usage.Position | Usage.Normal);
     	actor2 = new Actor3d(model, 10f, 0f, 0f);
     	camController = new CameraInputController(stage3d.getCamera());
@@ -84,6 +83,8 @@ public class Scene3dDemo implements ApplicationListener {
         stage3d.addActor3d(actor1);
         stage3d.addActor3d(actor2);
     	testActor3d();
+    	actor1.setColor(Color.BLUE);
+    	actor2.setColor(Color.RED);
     	//testGroup3d();
     	//testStage3d();
     }

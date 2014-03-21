@@ -15,6 +15,9 @@
  ******************************************************************************/
 package scene3d;
 
+import scene3d.InputEvent3d.Type;
+
+import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Pool.Poolable;
 
 /** The base class for all events.
@@ -30,6 +33,8 @@ import com.badlogic.gdx.utils.Pool.Poolable;
  * 
  * @see InputEvent
  * @see Actor#fire(Event) */
+
+
 public class Event3d implements Poolable {
         private Stage3d stage;
         private Actor3d targetActor;

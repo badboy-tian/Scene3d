@@ -54,23 +54,23 @@ public class Group3d extends Actor3d{
 	 
     /** Adds an actor as a child of this group. The actor is first removed from its parent group, if any.
      * @see #remove() */
-    public void addActor(Actor3d actor) {
-         actor.remove();
-         children.add(actor);
-         actor.setParent(this);
-         actor.setStage3d(getStage3d());
+    public void addActor(Actor3d actor3d) {
+         actor3d.remove();
+         children.add(actor3d);
+         actor3d.setParent(this);
+         actor3d.setStage3d(getStage3d());
          childrenChanged();
     }
     
     /** Removes an actor from this group. If the actor will not be used again and has actions, they should be
      * {@link Actor#clearActions3d() cleared} so the actions will be returned to their
      * {@link Action#setPool(com.badlogic.gdx.utils.Pool) pool}, if any. This is not done automatically. */
-    public boolean removeActor(Actor3d actor) {
-            if (!children.removeValue(actor, true)) return false;
+    public boolean removeActor3d(Actor3d actor3d) {
+            if (!children.removeValue(actor3d, true)) return false;
             Stage3d stage = getStage3d();
-            if (stage != null) stage.unfocus(actor);
-            actor.setParent(null);
-            actor.setStage3d(null);
+            if (stage != null) stage.unfocus(actor3d);
+            actor3d.setParent(null);
+            actor3d.setStage3d(null);
             childrenChanged();
             return true;
     }

@@ -1,9 +1,13 @@
 package scene3d;
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.g3d.Environment;
 import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.Model;
+import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.utils.Array;
@@ -15,15 +19,15 @@ public class Actor3d extends ModelInstance {
 	private Group3d parent;
 	
 	private final DelayedRemovalArray<Event3dListener> listeners = new DelayedRemovalArray<Event3dListener>(0);
-	private final Array<Action3d> actions3d = new Array<Action3d>(0);
+	private final Array<Action3d> actions = new Array(0);
 	
 	private String name;
 	private boolean visible = true;
 	
-	private float x, y, z;
-	private float originX, originY, originZ;
-	private float scaleX = 1, scaleY = 1, scaleZ = 1;
-	private float rotation = 0;
+	float x, y, z;
+	float originX, originY, originZ;
+	float scaleX = 1, scaleY = 1, scaleZ = 1;
+	float rotation = 0;
 	
 	private BoundingBox boundBox;
 	
@@ -31,6 +35,7 @@ public class Actor3d extends ModelInstance {
 		super(new Model());
 		setPosition(0,0,0);
 		setOrigin(0,0,0);
+		setScale(0,0,0);
 	}
 	
 	public Actor3d(Model model){
@@ -52,14 +57,19 @@ public class Actor3d extends ModelInstance {
 	 * The default implementation calls {@link Action3d#act(float)} on each action and removes actions that are complete.
 	 * @param delta Time in seconds since the last frame. */
 	public void act (float delta) {
-		for (int i = 0; i < actions3d.size; i++) {
-			Action3d action3d = actions3d.get(i);
-			if (action3d.act(delta) && i < actions3d.size) {
-				actions3d.removeIndex(i);
+		for (int i = 0; i < actions.size; i++) {
+			Action3d action3d = actions.get(i);
+			if (action3d.act(delta) && i < actions.size) {
+				//Gdx.app.log("", "Action"+i);
+				actions.removeIndex(i);
 				action3d.setActor3d(null);
 				i--;
 			}
 		}
+	}
+	
+	public void draw(ModelBatch modelBatch, Environment environment){
+		modelBatch.render(this, environment);
 	}
 	
 	public Actor3d hit (float x, float y) {
@@ -93,24 +103,24 @@ public class Actor3d extends ModelInstance {
 		return listeners;
 	}
 	
-	public void addAction3d (Action3d action) {
-		action.setActor3d(this);
-		actions3d.add(action);
+	public void addAction3d (Action3d action3d) {
+		action3d.setActor3d(this);
+		actions.add(action3d);
 	}
 
 	public void removeAction3d (Action3d action) {
-		if (actions3d.removeValue(action, true)) action.setActor3d(null);
+		if (actions.removeValue(action, true)) action.setActor3d(null);
 	}
 
 	public Array<Action3d> getActions3d () {
-		return actions3d;
+		return actions;
 	}
 
 	/** Removes all actions on this actor3d. */
 	public void clearActions3d () {
-		for (int i = actions3d.size - 1; i >= 0; i--)
-			actions3d.get(i).setActor3d(null);
-		actions3d.clear();
+		for (int i = actions.size - 1; i >= 0; i--)
+			actions.get(i).setActor3d(null);
+		actions.clear();
 	}
 
 	/** Removes all listeners on this actor3d. */
@@ -326,6 +336,11 @@ public class Actor3d extends ModelInstance {
 	public float getScaleZ () {
 		return scaleZ;
 	}
+	
+	public void updateTransform(){
+		transform.setToTranslationAndScaling(x, y, z, scaleX, scaleY, scaleZ);
+		transform.setToRotation(originX, originY, originZ, rotation);
+	}
 
 	/** Sets a name for easier identification of the actor3d in application code.
 	 * @see Group#findActor(String) */
@@ -358,5 +373,13 @@ public class Actor3d extends ModelInstance {
 		else
 			materials.add(new Material("Color", ca));
 			model.materials.add(new Material("Color", ca));
+	}
+	
+	public Matrix4 getTransform(){
+		return transform;
+	}
+	
+	public void setTransform(Matrix4 transform){
+		this.transform = transform;
 	}
 }

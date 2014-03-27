@@ -1,5 +1,7 @@
 package scene3d.actions;
 
+import com.badlogic.gdx.Gdx;
+
 public class MoveToAction extends TemporalAction {
     private float startX, startY, startZ;
     private float endX, endY, endZ;
@@ -16,7 +18,7 @@ public class MoveToAction extends TemporalAction {
     @Override
     protected void update (float percent) {
     	if(actor3d != null){
-        actor3d.setPosition(startX + (endX - startX) * percent, startY + (endY - startY) * percent,
+    		actor3d.setPosition(startX + (endX - startX) * percent, startY + (endY - startY) * percent,
         		startZ + (endZ - startZ) * percent);
     	}
     }

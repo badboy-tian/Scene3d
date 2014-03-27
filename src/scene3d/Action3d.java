@@ -49,9 +49,9 @@ abstract public class Action3d implements Poolable {
          * This method is not typically a good place for a subclass to query the actor's state because the action may not be executed
          * for some time, eg it may be {@link DelayAction delayed}. The actor's state is best queried in the first call to
          * {@link #act(float)}. For a {@link TemporalAction}, use TemporalAction#begin(). */
-        public void setActor3d(Actor3d actor) {
-                this.actor3d = actor;
-                if (actor == null) {
+        public void setActor3d(Actor3d actor3d) {
+                this.actor3d = actor3d;
+                if (actor3d == null) {
                         if (pool != null) {
                                 pool.free(this);
                                 pool = null;
@@ -69,7 +69,7 @@ abstract public class Action3d implements Poolable {
                 restart();
         }
 
-        public Pool getPool () {
+        public Pool<Action3d> getPool () {
                 return pool;
         }
 

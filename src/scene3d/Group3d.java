@@ -16,15 +16,21 @@
 
 package scene3d;
 
+import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g3d.Environment;
 import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.SnapshotArray;
 
 
 public class Group3d extends Actor3d{
 	private final SnapshotArray<Actor3d> children = new SnapshotArray<Actor3d>(true, 4, Actor3d.class);
+	private final Matrix4 localTransform = new Matrix4();
+	private final Matrix4 batchTransform = new Matrix4();
+	private final Matrix4 oldBatchTransform = new Matrix4();
+	private boolean transform = true;
 	
 	public Group3d(){
 		super();
@@ -37,24 +43,140 @@ public class Group3d extends Actor3d{
 	public void act (float delta) {
         super.act(delta);
         Actor3d[] actors = children.begin();
-        for (int i = 0, n = children.size; i < n; i++)
-                actors[i].act(delta);
+        for(int i = 0, n = children.size; i < n; i++){
+        	actors[i].act(delta);
+        }
         children.end();
 	}
 	
+	/** Draws the group and its children. The default implementation calls {@link #applyTransform(Batch, Matrix4)} if needed, then
+	 * {@link #drawChildren(Batch, float)}, then {@link #resetTransform(Batch)} if needed. */
+	@Override
+	public void draw(ModelBatch modelBatch, Environment environment) {
+		super.draw(modelBatch, environment);
+		//if (transform) applyTransform(batch, computeTransform());
+		drawChildren(modelBatch, environment);
+		//if (transform) resetTransform(batch);
+	}
+
+	
 	public void drawChildren(ModelBatch modelBatch, Environment environment){
-		 modelBatch.render(this, environment);
-	     modelBatch.render(children, environment);
-	     for(Actor3d a: children){
-	    	 if(a instanceof Group3d){
-	    		 ((Group3d) a).drawChildren(modelBatch, environment);
+	     //modelBatch.render(children, environment); maybe faster 
+	     SnapshotArray<Actor3d> children = this.children;
+		 Actor3d[] actors = children.begin();
+		 for (int i = 0, n = children.size; i < n; i++){
+			 if(actors[i] instanceof Group3d){
+	    		 ((Group3d) actors[i]).drawChildren(modelBatch, environment);
 	    	 }
-	     }
+			 else{
+					float offsetX = x, offsetY = y, offsetZ = z;
+					float offsetScaleX = scaleX, offsetScaleY = scaleY, offsetScaleZ = scaleZ;
+					x = 0;
+					y = 0;
+					z = 0;
+					scaleX = 0;
+					scaleY = 0;
+					scaleZ = 0;
+					Actor3d child = actors[i];
+					if (!child.isVisible()) continue;
+					/*Matrix4 diff = sub(child.getTransform(), getTransform());
+					Matrix4 childMatrix = child.getTransform().cpy();
+					child.getTransform().set(add(diff, childMatrix));
+					child.draw(modelBatch, environment);*/
+					float cx = child.x, cy = child.y, cz = child.z;
+					float sx = child.scaleX, sy = child.scaleY, sz = child.scaleZ;
+					//child.x = cx + offsetX;
+					//child.y = cy + offsetY;
+					//child.z = cz + offsetZ;
+					child.setPosition(cx + offsetX, cy + offsetY, cz + offsetZ);
+					child.scale(sx + offsetScaleX, sy + offsetScaleY, sz + offsetScaleZ);
+					child.draw(modelBatch, environment);
+					child.x = cx;
+					child.y = cy;
+					child.z = cz;
+					x = offsetX;
+					y = offsetY;
+					z = offsetZ;
+					child.scaleX = sx;
+					child.scaleY = sy;
+					child.scaleZ = sz;
+					scaleX = offsetScaleX;
+					scaleY = offsetScaleY;
+					scaleZ = offsetScaleZ;
+			 }
+		 }
+		 children.end();
+	}
+	
+	private Matrix4 add(Matrix4 first, Matrix4 second){
+		Matrix4 temp = first.cpy();
+		for(int i=0;i<first.val.length;i++)
+			temp.val[i] += second.val[i];
+		return temp;
+	}
+	
+	private Matrix4 sub(Matrix4 first, Matrix4 second){
+		Matrix4 temp = first.cpy();
+		for(int i=0;i<first.val.length;i++)
+			temp.val[i] -= second.val[i];
+		return temp;
+	}
+	
+	/** Set the Batch's transformation matrix, often with the result of {@link #computeTransform()}. Note this causes the batch to
+	 * be flushed. {@link #resetTransform(Batch)} will restore the transform to what it was before this call. */
+	protected void applyTransform (ModelBatch batch, Matrix4 transform) {
+		oldBatchTransform.set(getTransform());
+		setTransform(transform);
+	}
+
+	/** Returns the transform for this group's coordinate system. */
+	protected Matrix4 computeTransform () {
+		Matrix4 temp = getTransform();
+
+		float originX = this.originX;
+		float originY = this.originY;
+		float originZ = this.originZ;
+		float rotation = this.rotation;
+		float scaleX = this.scaleX;
+		float scaleY = this.scaleY;
+		float scaleZ = this.scaleZ;
+
+		if (originX != 0 || originY != 0)
+			localTransform.setToTranslation(originX, originY, originZ);
+		else
+			localTransform.idt();
+		if (rotation != 0) localTransform.rotate(originX, originY, originZ, rotation);
+		if (scaleX != 1 || scaleY != 1) localTransform.scale(scaleX, scaleY, scaleZ);
+		if (originX != 0 || originY != 0) localTransform.translate(-originX, -originY, -originZ);
+		localTransform.trn(x, y, z);
+
+		// Find the first parent that transforms.
+		Group3d parentGroup = getParent();
+		while (parentGroup != null) {
+			if (parentGroup.transform) break;
+			parentGroup = parentGroup.getParent();
+		}
+
+		if (parentGroup != null) {
+			setTransform(parentGroup.getTransform());
+			getTransform().mul(localTransform);
+		} else {
+			getTransform().set(localTransform);
+		}
+
+		batchTransform.set(getTransform());
+		return batchTransform;
+	}
+
+	/** Restores the Batch transform to what it was before {@link #applyTransform(Batch, Matrix4)}. Note this causes the batch to be
+	 * flushed. */
+	protected void resetTransform (ModelBatch batch) {
+		setTransform(oldBatchTransform);
 	}
 	 
     /** Adds an actor as a child of this group. The actor is first removed from its parent group, if any.
      * @see #remove() */
-    public void addActor(Actor3d actor3d) {
+    public void addActor3d(Actor3d actor3d) {
          actor3d.remove();
          children.add(actor3d);
          actor3d.setParent(this);
@@ -75,13 +197,14 @@ public class Group3d extends Actor3d{
             return true;
     }
     
-    @Override
+    /*@Override
     public void addAction3d (Action3d action){
     	super.addAction3d(action);
     	Actor3d[] actors = children.begin();
-        for (int i = 0, n = children.size; i < n; i++)
-                actors[i].addAction3d(action);
-        children.end();
+        for(int i = 0, n = children.size; i < n; i++){
+        	actors[i].addAction3d(action);
+       }
+       children.end();
     }
 
     @Override
@@ -91,7 +214,7 @@ public class Group3d extends Actor3d{
         for (int i = 0, n = children.size; i < n; i++)
                 actors[i].removeAction3d(action);
         children.end();
-	}
+	}*/
     
     /** Called when actors are added to or removed from the group. */
     protected void childrenChanged () {
@@ -136,7 +259,7 @@ public class Group3d extends Actor3d{
         super.setStage3d(stage3d);
         Array<Actor3d> children = this.children;
         for (int i = 0, n = children.size; i < n; i++)
-                children.get(i).setStage3d(stage3d);
+            children.get(i).setStage3d(stage3d);
     }
     
     /** Returns an ordered list of child actors in this group. */

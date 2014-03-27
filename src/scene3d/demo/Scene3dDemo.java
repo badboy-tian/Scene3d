@@ -23,6 +23,10 @@ import scene3d.actions.Actions3d;
 
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.InputMultiplexer;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.InputListener;
+import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
 import com.badlogic.gdx.graphics.Color;
@@ -34,17 +38,18 @@ import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.utils.CameraInputController;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.actions.Actions;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
-
 public class Scene3dDemo implements ApplicationListener {
 	Stage3d stage3d;
 	Stage stage2d;
 	Skin skin;
 	ModelBuilder modelBuilder;
 	CameraInputController camController;
-	Model model;
-	Actor3d actor1, actor2;
+	Model model, model2, model3;
+	Actor3d actor1, actor2, actor3;
 	Group3d group3d;
 	Label fpsText;
 	
@@ -72,24 +77,45 @@ public class Scene3dDemo implements ApplicationListener {
     	//3dstuff
     	stage3d = new Stage3d();
     	modelBuilder = new ModelBuilder();
+    	
     	model = modelBuilder.createBox(5f, 5f, 5f, new Material("Color", ColorAttribute.createDiffuse(Color.WHITE)),
                 Usage.Position | Usage.Normal);
     	actor1 = new Actor3d(model, 0f, 0f, 0f);
-    	model = modelBuilder.createBox(2f, 2f, 2f, new Material("Color", ColorAttribute.createDiffuse(Color.WHITE)),
+    	model2 = modelBuilder.createBox(2f, 2f, 2f, new Material("Color", ColorAttribute.createDiffuse(Color.WHITE)),
                 Usage.Position | Usage.Normal);
-    	actor2 = new Actor3d(model, 10f, 0f, 0f);
-    	camController = new CameraInputController(stage3d.getCamera());
-        Gdx.input.setInputProcessor(camController);
-        stage3d.addActor3d(actor1);
-        stage3d.addActor3d(actor2);
-    	testActor3d();
+    	actor2 = new Actor3d(model2, 10f, 0f, 0f);
+    	model3 = modelBuilder.createBox(2f, 2f, 2f, new Material("Color", ColorAttribute.createDiffuse(Color.ORANGE)),
+                Usage.Position | Usage.Normal);
+    	actor3 = new Actor3d(model3, -10f, 0f, 0f);
     	actor1.setColor(Color.BLUE);
     	actor2.setColor(Color.RED);
+    	actor1.setName("actor1");
+    	actor2.setName("actor2");
+    	actor3.setName("actor3");
+    	camController = new CameraInputController(stage3d.getCamera());
+    	InputMultiplexer im = new InputMultiplexer();
+    	im.addProcessor(stage2d);
+		im.addProcessor(stage3d);
+		im.addProcessor(camController);
+		Gdx.input.setInputProcessor(im);
+    	stage3d.touchable = Touchable.enabled; // only then will it detect hit actor3d
+    	stage2d.addListener(new InputListener(){
+    		@Override
+    		public boolean touchDown(InputEvent e, float x, float y, int pointer, int button) {
+    			Actor3d actor3d = stage3d.getHitActor();
+    			if(actor3d != null)
+    				Gdx.app.log("", actor3d.getName());
+    			return false;
+    		}
+    	});
+    	//testActor3d();
     	//testGroup3d();
-    	//testStage3d();
+    	testStage3d();
     }
     
     void testActor3d(){
+    	stage3d.addActor3d(actor1);
+        stage3d.addActor3d(actor2);
     	//actor1.addAction3d(Actions3d.rotateTo(60f, 5f));
     	//actor1.addAction3d(Actions3d.scaleBy(0.5f, 0.5f, 0.5f, 5f, Interpolation.linear));
         //actor1.addAction3d(Actions3d.forever(Actions3d.sequence(Actions3d.moveBy(7f, 0f, 0f, 2f),
@@ -124,19 +150,23 @@ public class Scene3dDemo implements ApplicationListener {
     void testGroup3d(){
     	group3d = new Group3d();
     	group3d.setPosition(0f, 0f, 0f);
-    	group3d.addActor(actor1);
-    	group3d.addActor(new Actor3d(model, 7f, 0f, 0f));
+    	group3d.setName("group1");
     	stage3d.addActor3d(group3d);
-    	group3d.addAction3d(Actions3d.moveTo(-7f, 0f, 0f, 2f));
+    	group3d.addActor3d(actor1);
+    	group3d.addActor3d(actor2);
+    	group3d.addActor3d(actor3);
+    	group3d.addAction3d(Actions3d.sequence(Actions3d.moveTo(0f, 5f, 0f, 2f), 
+    			Actions3d.moveTo(5f, 0f, 0f, 2f), Actions3d.scaleTo(0f, 5f, 0f, 2f)));
     }
     
     void testStage3d(){
-    	stage3d.addAction3d(Actions3d.moveTo(-7f, 0f, 0f, 1f));
+    	stage3d.addActor3d(actor1);
+        stage3d.addActor3d(actor2);
+    	stage3d.addAction3d(Actions3d.moveTo(-7f, 0f, 0f, 3f));
     }
  
     @Override
     public void render () {
-    	//Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
         stage2d.act();
     	stage2d.draw();
@@ -144,7 +174,6 @@ public class Scene3dDemo implements ApplicationListener {
     	stage3d.draw();
     	camController.update();
     	fpsText.setText("Fps: " + Gdx.graphics.getFramesPerSecond());
-    	Gdx.app.log("", ""+actor1.getScaleX());
     }
      
     @Override
@@ -157,7 +186,9 @@ public class Scene3dDemo implements ApplicationListener {
 	}
 
 	@Override
-	public void resize(int arg0, int arg1) {
+	public void resize(int width, int height) {
+		stage2d.setViewport(width, height);
+		stage3d.setViewport(width, height);
 	}
 
 	@Override

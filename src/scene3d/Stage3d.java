@@ -20,9 +20,11 @@ import java.util.Iterator;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.graphics.Camera;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.g3d.Environment;
+import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
@@ -56,6 +58,10 @@ public class Stage3d extends InputAdapter implements Disposable {
 	private Actor3d keyboardFocus;
 	
 	public Touchable touchable = Touchable.disabled;
+	private int selecting = -1;
+	private Actor3d selectedActor;
+	private Material selectionMaterial;
+    private Material originalMaterial;
 
 
 	/** Creates a stage with a {@link #setViewport(float, float, boolean) viewport} equal to the device screen resolution. The stage
@@ -90,6 +96,9 @@ public class Stage3d extends InputAdapter implements Disposable {
 		environment.add(new DirectionalLight().set(0.8f, 0.8f, 0.8f, -1f, -0.8f, -0.2f));
 
 		setViewport(width, height, keepAspectRatio);
+	    selectionMaterial = new Material();
+	    selectionMaterial.set(ColorAttribute.createDiffuse(Color.ORANGE));
+	    originalMaterial = new Material();
 	}
 	
 	public Stage3d (float width, float height, PerspectiveCamera camera) {
@@ -295,15 +304,101 @@ public class Stage3d extends InputAdapter implements Disposable {
 
 	@Override
 	public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-		return false;
+		Actor3d actor3d = getObject(screenX, screenY);
+		selecting = actor3d != null?1:-1;
+		if(actor3d != null && actor3d.getName() != null)
+			Gdx.app.log("", ""+actor3d.getName());
+        return selecting > 0;
+		//return false;
 	}
 
 	@Override
 	public boolean touchUp(int screenX, int screenY, int pointer, int button) {
-		if(touchable == Touchable.enabled)
-			hit(screenX, screenY);
-		return false;
+		if (selecting >= 0) {
+	         //setSelected(getObject(screenX, screenY));
+	         selecting = -1;
+	         return true;
+	    }
+	    return false;
+		//if(touchable == Touchable.enabled)
+		//	hit(screenX, screenY);
+		//return false;
 	}
+	
+	@Override
+    public boolean touchDragged (int screenX, int screenY, int pointer) {
+        return selecting >= 0;
+    }
+	
+	/*public void setSelected (Actor3d actor3d) {
+        if (selectedActor == actor3d) return;
+        if (selected >= 0) {
+            Material mat = root.getChildren().get(selected).materials.get(0);
+            mat.clear();
+            mat.set(originalMaterial);
+        }
+        selected = value;
+        if (selected >= 0) {
+            Material mat = root.getChildren().get(selected).materials.get(0);
+            originalMaterial.clear();
+            originalMaterial.set(mat);
+            mat.clear();
+            mat.set(selectionMaterial);
+        }
+    }*/
+ 
+	Vector3 position = new Vector3();
+	int result = -1;
+    float distance = -1;
+    
+    public Actor3d getObject (int screenX, int screenY) {
+    	 Actor3d temp = null;
+    	 SnapshotArray<Actor3d> children = root.getChildren();
+    	 Actor3d[] actors = children.begin();
+         for(int i = 0, n = children.size; i < n; i++){
+        	 temp = hit3d(screenX, screenY, actors[i]);
+        	 if(actors[i] instanceof Group3d)
+        		 temp = hit3d(screenX, screenY, (Group3d)actors[i]);
+         }
+         children.end();
+         return temp;
+    }
+    
+    public Actor3d hit3d(int screenX, int screenY, Actor3d actor3d) {
+        Ray ray = camera.getPickRay(screenX, screenY);
+        actor3d.getTransform().getTranslation(position);
+        position.add(actor3d.center);
+        float dist2 = ray.origin.dst2(position);
+        if (distance >= 0f && dist2 > distance) return null;
+        if (Intersector.intersectRaySphere(ray, position, actor3d.radius, null)) {
+           distance = dist2;
+           return actor3d;
+        }
+        return null;
+    }
+    
+    public Actor3d hit3d(int screenX, int screenY, Group3d group3d) {
+    	Ray ray = camera.getPickRay(screenX, screenY);
+        float distance = -1;
+        for (int i = 0; i < group3d.getChildren().size; ++i) {
+            final Actor3d child = group3d.getChildren().get(i);
+            child.getTransform().getTranslation(position);
+            position.add(child.center);
+            final float len = ray.direction.dot(position.x-ray.origin.x, position.y-ray.origin.y, position.z-ray.origin.z);
+            if (len < 0f)
+                continue;
+     
+            float dist2 = position.dst2(ray.origin.x+ray.direction.x*len, ray.origin.y+ray.direction.y*len, ray.origin.z+ray.direction.z*len);
+            if (distance >= 0f && dist2 > distance) 
+                continue;
+     
+            if (dist2 <= child.radius * child.radius) {
+                distance = dist2;
+                return child;
+            }
+        }
+        return null;
+    }
 	
 	private Ray pickRay;
 	private Vector3 returnIntersection = new Vector3();

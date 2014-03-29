@@ -16,11 +16,13 @@
 
 package scene3d;
 
+import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g3d.Environment;
 import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.math.Matrix4;
+import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.SnapshotArray;
 
@@ -31,6 +33,7 @@ public class Group3d extends Actor3d{
 	private final Matrix4 batchTransform = new Matrix4();
 	private final Matrix4 oldBatchTransform = new Matrix4();
 	private boolean transform = true;
+	public int visibleCount;
 	
 	public Group3d(){
 		super();
@@ -90,6 +93,11 @@ public class Group3d extends Actor3d{
 					//child.z = cz + offsetZ;
 					child.setPosition(cx + offsetX, cy + offsetY, cz + offsetZ);
 					child.scale(sx + offsetScaleX, sy + offsetScaleY, sz + offsetScaleZ);
+					visibleCount = 0;
+			        if (isVisible(getStage3d().getCamera(), child)) {
+			            modelBatch.render(child, environment);
+			            visibleCount++;
+			        }
 					child.draw(modelBatch, environment);
 					child.x = cx;
 					child.y = cy;
@@ -107,6 +115,13 @@ public class Group3d extends Actor3d{
 		 }
 		 children.end();
 	}
+	
+	private Vector3 position = new Vector3();
+	protected boolean isVisible(final Camera cam, final Actor3d actor3d) {
+		actor3d.getTransform().getTranslation(position);
+	    position.add(actor3d.center);
+	    return cam.frustum.sphereInFrustum(position, actor3d.radius);
+    }
 	
 	private Matrix4 add(Matrix4 first, Matrix4 second){
 		Matrix4 temp = first.cpy();

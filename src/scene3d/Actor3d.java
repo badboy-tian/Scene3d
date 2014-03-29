@@ -8,6 +8,7 @@ import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.math.Matrix4;
+import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.utils.Array;
@@ -21,6 +22,11 @@ public class Actor3d extends ModelInstance {
 	private final DelayedRemovalArray<Event3dListener> listeners = new DelayedRemovalArray<Event3dListener>(0);
 	private final Array<Action3d> actions = new Array(0);
 	
+	public final Vector3 center = new Vector3();
+    public final Vector3 dimensions = new Vector3();
+    private BoundingBox boundBox = new BoundingBox();
+    public final float radius;
+	
 	private String name;
 	private boolean visible = true;
 	
@@ -29,27 +35,25 @@ public class Actor3d extends ModelInstance {
 	float scaleX = 1, scaleY = 1, scaleZ = 1;
 	float rotation = 0;
 	
-	private BoundingBox boundBox;
-	
 	public Actor3d(){
-		super(new Model());
-		setPosition(0,0,0);
+		this(new Model());
 		setOrigin(0,0,0);
 		setScale(0,0,0);
 	}
 	
 	public Actor3d(Model model){
-		super(model);
-		setPosition(0,0,0);
-		boundBox = model.meshes.get(0).calculateBoundingBox();
-		setOrigin(boundBox.max.x, boundBox.max.y, boundBox.max.z);
+		this(model, 0f, 0f ,0f);
 	}
 	
 	public Actor3d(Model model, float x, float y, float z){
 		super(model);
 		setPosition(x,y,z);
-		boundBox = model.meshes.get(0).calculateBoundingBox();
-		setOrigin(boundBox.max.x, boundBox.max.y, boundBox.max.z);
+		//boundBox = model.meshes.get(0).calculateBoundingBox();
+		//setOrigin(boundBox.max.x, boundBox.max.y, boundBox.max.z);
+		calculateBoundingBox(boundBox);
+        center.set(boundBox.getCenter());
+        dimensions.set(boundBox.getDimensions());
+		radius = dimensions.len() / 2f;
 	}
 	
 	/** Updates the actor3d based on time. Typically this is called each frame by {@link Stage3d#act(float)}.

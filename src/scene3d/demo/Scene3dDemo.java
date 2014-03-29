@@ -38,10 +38,9 @@ import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.utils.CameraInputController;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.actions.Actions;
-import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+
 public class Scene3dDemo implements ApplicationListener {
 	Stage3d stage3d;
 	Stage stage2d;
@@ -52,6 +51,7 @@ public class Scene3dDemo implements ApplicationListener {
 	Actor3d actor1, actor2, actor3;
 	Group3d group3d;
 	Label fpsText;
+	Label visibleText;
 	
 	public static void main(String[] argc) {
 		LwjglApplicationConfiguration cfg = new LwjglApplicationConfiguration();
@@ -72,7 +72,10 @@ public class Scene3dDemo implements ApplicationListener {
     	skin = new Skin(Gdx.files.internal("skin/uiskin.json"));
     	fpsText = new Label("ff", skin);
     	fpsText.setPosition(Gdx.graphics.getWidth() - 80, Gdx.graphics.getHeight()-40);
+    	visibleText = new Label("ff", skin);
+    	visibleText.setPosition(Gdx.graphics.getWidth() - 80, Gdx.graphics.getHeight()- 60);
     	stage2d.addActor(fpsText);
+    	stage2d.addActor(visibleText);
     	
     	//3dstuff
     	stage3d = new Stage3d();
@@ -99,23 +102,44 @@ public class Scene3dDemo implements ApplicationListener {
 		im.addProcessor(camController);
 		Gdx.input.setInputProcessor(im);
     	stage3d.touchable = Touchable.enabled; // only then will it detect hit actor3d
-    	stage2d.addListener(new InputListener(){
-    		@Override
-    		public boolean touchDown(InputEvent e, float x, float y, int pointer, int button) {
-    			Actor3d actor3d = stage3d.getHitActor();
-    			if(actor3d != null)
-    				Gdx.app.log("", actor3d.getName());
-    			return false;
-    		}
-    	});
     	//testActor3d();
-    	//testGroup3d();
-    	testStage3d();
+    	testGroup3d();
+    	//testStage3d();
     }
-    
-    void testActor3d(){
+
+    @Override
+    public void render () {
+        Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
+        stage3d.act();
+    	stage3d.draw();
+    	stage2d.act();
+     	stage2d.draw();
+    	camController.update();
+    	fpsText.setText("Fps: " + Gdx.graphics.getFramesPerSecond());
+    	visibleText.setText("Visible: " + stage3d.getRoot().visibleCount);
+    }
+
+	
+	@Override
+	public void resize(int width, int height) {
+		stage2d.setViewport(width, height);
+		stage3d.setViewport(width, height);
+	}
+	
+	@Override
+	public void pause() {}
+
+	@Override
+	public void resume() {}
+	
+    @Override
+	public void dispose () {
+	   stage3d.dispose();
+	}
+	
+	void testActor3d(){
     	stage3d.addActor3d(actor1);
-        stage3d.addActor3d(actor2);
+        //stage3d.addActor3d(actor2);
     	//actor1.addAction3d(Actions3d.rotateTo(60f, 5f));
     	//actor1.addAction3d(Actions3d.scaleBy(0.5f, 0.5f, 0.5f, 5f, Interpolation.linear));
         //actor1.addAction3d(Actions3d.forever(Actions3d.sequence(Actions3d.moveBy(7f, 0f, 0f, 2f),
@@ -164,34 +188,4 @@ public class Scene3dDemo implements ApplicationListener {
         stage3d.addActor3d(actor2);
     	stage3d.addAction3d(Actions3d.moveTo(-7f, 0f, 0f, 3f));
     }
- 
-    @Override
-    public void render () {
-        Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
-        stage2d.act();
-    	stage2d.draw();
-        stage3d.act();
-    	stage3d.draw();
-    	camController.update();
-    	fpsText.setText("Fps: " + Gdx.graphics.getFramesPerSecond());
-    }
-     
-    @Override
-    public void dispose () {
-    	stage3d.dispose();
-    }
-
-	@Override
-	public void pause() {
-	}
-
-	@Override
-	public void resize(int width, int height) {
-		stage2d.setViewport(width, height);
-		stage3d.setViewport(width, height);
-	}
-
-	@Override
-	public void resume() {
-	}
 }

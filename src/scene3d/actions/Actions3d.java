@@ -3,7 +3,6 @@ package scene3d.actions;
 import scene3d.Action3d;
 import scene3d.Actor3d;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.utils.Pool;
 import com.badlogic.gdx.utils.Pools;
@@ -113,34 +112,34 @@ public class Actions3d {
     }
     
     /** Rotates the actor instantly. */
-    static public RotateToAction rotateTo (float rotation) {
-            return rotateTo(rotation, 0, null);
+    static public RotateToAction rotateTo (float yaw, float pitch, float roll) {
+            return rotateTo(yaw, pitch, roll, 0, null);
     }
     
-    static public RotateToAction rotateTo (float rotation, float duration) {
-        return rotateTo(rotation, duration, null);
+    static public RotateToAction rotateTo (float yaw, float pitch, float roll, float duration) {
+        return rotateTo(yaw, pitch, roll, duration, null);
     }
     
-    static public RotateToAction rotateTo (float rotation, float duration, Interpolation interpolation) {
+    static public RotateToAction rotateTo (float yaw, float pitch, float roll, float duration, Interpolation interpolation) {
         RotateToAction action = action3d(RotateToAction.class);
-        action.setRotation(rotation);
+        action.setRotation(yaw, pitch, roll);
         action.setDuration(duration);
         action.setInterpolation(interpolation);
         return action;
     }
 
     /** Rotates the actor instantly. */
-    static public RotateByAction rotateBy (float rotationAmount) {
-            return rotateBy(rotationAmount, 0, null);
+    static public RotateByAction rotateBy (float yaw, float pitch, float roll) {
+            return rotateBy(yaw, pitch, roll, 0, null);
     }
     
-    static public RotateByAction rotateBy (float rotationAmount, float duration) {
-        return rotateBy(rotationAmount, duration, null);
+    static public RotateByAction rotateBy (float yaw, float pitch, float roll, float duration) {
+        return rotateBy(yaw, pitch, roll, duration, null);
     }
     
-    static public RotateByAction rotateBy (float rotationAmount, float duration, Interpolation interpolation) {
+    static public RotateByAction rotateBy (float yaw, float pitch, float roll, float duration, Interpolation interpolation) {
         RotateByAction action = action3d(RotateByAction.class);
-        action.setAmount(rotationAmount);
+        action.setAmount(yaw, pitch, roll);
         action.setDuration(duration);
         action.setInterpolation(interpolation);
         return action;

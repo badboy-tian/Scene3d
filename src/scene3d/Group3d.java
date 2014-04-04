@@ -13,26 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ******************************************************************************/
-
 package scene3d;
 
-import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g3d.Environment;
 import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.math.Matrix4;
-import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.SnapshotArray;
 
 
 public class Group3d extends Actor3d{
 	private final SnapshotArray<Actor3d> children = new SnapshotArray<Actor3d>(true, 4, Actor3d.class);
-	private final Matrix4 localTransform = new Matrix4();
-	private final Matrix4 batchTransform = new Matrix4();
-	private final Matrix4 oldBatchTransform = new Matrix4();
-	private boolean transform = true;
 	public int visibleCount;
 	
 	public Group3d(){
@@ -57,9 +50,7 @@ public class Group3d extends Actor3d{
 	@Override
 	public void draw(ModelBatch modelBatch, Environment environment) {
 		super.draw(modelBatch, environment);
-		//if (transform) applyTransform(batch, computeTransform());
 		drawChildren(modelBatch, environment);
-		//if (transform) resetTransform(batch);
 	}
 
 	
@@ -92,8 +83,8 @@ public class Group3d extends Actor3d{
 					//child.x = cx + offsetX;
 					//child.y = cy + offsetY;
 					//child.z = cz + offsetZ;
-					//child.setPosition(cx + offsetX, cy + offsetY, cz + offsetZ);
-					//child.scale(sx + offsetScaleX, sy + offsetScaleY, sz + offsetScaleZ);
+					child.setPosition(cx + offsetX, cy + offsetY, cz + offsetZ);
+					child.scale(sx + offsetScaleX, sy + offsetScaleY, sz + offsetScaleZ);
 			        if (child.isCullable(getStage3d().getCamera())) {
 			        	child.draw(modelBatch, environment);
 			            visibleCount++;
@@ -114,59 +105,7 @@ public class Group3d extends Actor3d{
 		 }
 		 children.end();
 	}
-	
-	/** Set the Batch's transformation matrix, often with the result of {@link #computeTransform()}. Note this causes the batch to
-	 * be flushed. {@link #resetTransform(Batch)} will restore the transform to what it was before this call. */
-	protected void applyTransform (ModelBatch batch, Matrix4 transform) {
-		oldBatchTransform.set(getTransform());
-		setTransform(transform);
-	}
 
-	/** Returns the transform for this group's coordinate system. */
-	protected Matrix4 computeTransform () {
-		Matrix4 temp = getTransform();
-
-		float originX = this.originX;
-		float originY = this.originY;
-		float originZ = this.originZ;
-		float rotation = this.rotation;
-		float scaleX = this.scaleX;
-		float scaleY = this.scaleY;
-		float scaleZ = this.scaleZ;
-
-		if (originX != 0 || originY != 0)
-			localTransform.setToTranslation(originX, originY, originZ);
-		else
-			localTransform.idt();
-		if (rotation != 0) localTransform.rotate(originX, originY, originZ, rotation);
-		if (scaleX != 1 || scaleY != 1) localTransform.scale(scaleX, scaleY, scaleZ);
-		if (originX != 0 || originY != 0) localTransform.translate(-originX, -originY, -originZ);
-		localTransform.trn(x, y, z);
-
-		// Find the first parent that transforms.
-		Group3d parentGroup = getParent();
-		while (parentGroup != null) {
-			if (parentGroup.transform) break;
-			parentGroup = parentGroup.getParent();
-		}
-
-		if (parentGroup != null) {
-			setTransform(parentGroup.getTransform());
-			getTransform().mul(localTransform);
-		} else {
-			getTransform().set(localTransform);
-		}
-
-		batchTransform.set(getTransform());
-		return batchTransform;
-	}
-
-	/** Restores the Batch transform to what it was before {@link #applyTransform(Batch, Matrix4)}. Note this causes the batch to be
-	 * flushed. */
-	protected void resetTransform (ModelBatch batch) {
-		setTransform(oldBatchTransform);
-	}
-	 
     /** Adds an actor as a child of this group. The actor is first removed from its parent group, if any.
      * @see #remove() */
     public void addActor3d(Actor3d actor3d) {

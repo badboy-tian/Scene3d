@@ -1,5 +1,5 @@
 package scene3d;
-import com.badlogic.gdx.Gdx;
+
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g3d.Environment;
@@ -24,7 +24,7 @@ public class Actor3d extends ModelInstance implements Disposable {
 	private Group3d parent;
 	
 	private final DelayedRemovalArray<Event3dListener> listeners = new DelayedRemovalArray<Event3dListener>(0);
-	private final Array<Action3d> actions = new Array(0);
+	private final Array<Action3d> actions = new Array<Action3d>(0);
 	
 	public final Vector3 center = new Vector3();
     public final Vector3 dimensions = new Vector3();
@@ -35,15 +35,13 @@ public class Actor3d extends ModelInstance implements Disposable {
 	private boolean visible = true;
 	
 	float x, y, z;
-	float originX, originY, originZ;
 	float scaleX = 1, scaleY = 1, scaleZ = 1;
-	float rotation = 0;
-	float rotationX = 0, rotationY = 0, rotationZ = 0;
+	float yaw = 0f,pitch =0f, roll=0f;
+	Matrix4 rotationMatrix = new Matrix4();
 	private AnimationController animation;
 	
 	public Actor3d(){
 		this(new Model());
-		setOrigin(0,0,0);
 		setScale(0,0,0);
 	}
 	
@@ -56,7 +54,6 @@ public class Actor3d extends ModelInstance implements Disposable {
 		setPosition(x,y,z);
 		//boundBox = model.meshes.get(0).calculateBoundingBox();
 		calculateBoundingBox(boundBox);
-		setOrigin(boundBox.max.x, boundBox.max.y, boundBox.max.z);
         center.set(boundBox.getCenter());
         dimensions.set(boundBox.getDimensions());
 		radius = dimensions.len() / 2f;
@@ -219,13 +216,6 @@ public class Actor3d extends ModelInstance implements Disposable {
         float dist2 = position.dst2(ray.origin.x+ray.direction.x*len, ray.origin.y+ray.direction.y*len, ray.origin.z+ray.direction.z*len);
         return (dist2 <= radius * radius) ? dist2 : -1f;
     }
-
-	/* Sets the originx , originy and originz used for rotation */
-	public void setOrigin (float originX, float originY, float originZ) {
-		this.originX = originX;
-		this.originY = originY;
-		this.originZ = originZ;
-	}
 	
 	public void setPosition(float x, float y, float z) {
 		this.x = x;
@@ -242,31 +232,47 @@ public class Actor3d extends ModelInstance implements Disposable {
 		transform.setToTranslationAndScaling(this.x, this.y, this.z, scaleX, scaleY, scaleZ);
 		transform.mul(rotationMatrix);
 	}
-	float yaw = 0f,pitch =0f, roll=0f;
-	
-	public void rotate(float degrees){
-		yaw = pitch = roll = degrees;
-		transform.setFromEulerAngles(degrees, degrees, degrees);
-		calculateTransforms();
-		transform.setToTranslationAndScaling(this.x, this.y, this.z, scaleX, scaleY, scaleZ);
-	}
 	
 	public void rotate(float yaw, float pitch, float roll){
 		this.yaw = yaw;
 		this.pitch = pitch;
 		this.roll = roll;
-		transform.setFromEulerAngles(yaw, pitch, roll);
-	}
-	
-	Matrix4 rotationMatrix = new Matrix4();
-	public void rotateX(float degrees){
-		rotationMatrix = transform.setToRotation(0, 0, 1, degrees).cpy();
+		rotationMatrix = transform.setFromEulerAngles(yaw, pitch, roll).cpy();
 		transform.setToTranslationAndScaling(x, y, z, scaleX, scaleY, scaleZ);
 		transform.mul(rotationMatrix);
 	}
 	
-	public float getRotation () {
-		return rotation;
+	public void rotateYaw(float yaw){
+		this.yaw = yaw;
+		rotationMatrix = transform.setFromEulerAngles(yaw, pitch, roll).cpy();
+		transform.setToTranslationAndScaling(x, y, z, scaleX, scaleY, scaleZ);
+		transform.mul(rotationMatrix);
+	}
+	
+	public void rotatePitch(float pitch){
+		this.pitch = pitch;
+		rotationMatrix = transform.setFromEulerAngles(yaw, pitch, roll).cpy();
+		transform.setToTranslationAndScaling(x, y, z, scaleX, scaleY, scaleZ);
+		transform.mul(rotationMatrix);
+	}
+	
+	public void rotateRoll(float roll){
+		this.roll = roll;
+		rotationMatrix = transform.setFromEulerAngles(yaw, pitch, roll).cpy();
+		transform.setToTranslationAndScaling(x, y, z, scaleX, scaleY, scaleZ);
+		transform.mul(rotationMatrix);
+	}
+	
+	public float getYaw(){
+		return yaw;
+	}
+	
+	public float getPitch(){
+		return pitch;
+	}
+	
+	public float getRoll(){
+		return roll;
 	}
 	
 	public void setScale(float scaleX, float scaleY, float scaleZ) {
@@ -326,30 +332,6 @@ public class Actor3d extends ModelInstance implements Disposable {
 		return z;
 	}
 	
-	public void setOriginX (float originX) {
-		this.originX = originX;
-	}
-	
-	public float getOriginX () {
-		return originX;
-	}
-	
-	public void setOriginY (float originY) {
-		this.originY = originY;
-	}
-	
-	public float getOriginY () {
-		return originY;
-	}
-	
-	public void setOriginZ (float originZ) {
-		this.originZ = originZ;
-	}
-	
-	public float getOriginZ () {
-		return originZ;
-	}
-	
 	public void setScaleX (float scaleX) {
 		this.scaleX = scaleX;
 		transform.scale(scaleX, scaleY, scaleZ);
@@ -375,11 +357,6 @@ public class Actor3d extends ModelInstance implements Disposable {
 	
 	public float getScaleZ () {
 		return scaleZ;
-	}
-	
-	public void updateTransform(){
-		transform.setToTranslationAndScaling(x, y, z, scaleX, scaleY, scaleZ);
-		transform.setToRotation(originX, originY, originZ, rotation);
 	}
 
 	/** Sets a name for easier identification of the actor3d in application code.

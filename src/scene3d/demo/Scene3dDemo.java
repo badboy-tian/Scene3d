@@ -142,22 +142,22 @@ public class Scene3dDemo implements ApplicationListener {
     	am.load("data/g3d/skydome.g3db", Model.class);
     	am.load("data/g3d/concrete.png", Texture.class);
     	am.finishLoading();
-    	knight = new Actor3d(am.get("data/g3d/knight.g3db", Model.class), -20f, 0f, 0f);
+    	knight = new Actor3d(am.get("data/g3d/knight.g3db", Model.class), -20f, 10f, 0f);
     	knight.getAnimation().inAction = true;
 		knight.getAnimation().animate("Walk", -1, 1f, null, 0.2f);
     	skydome = new Actor3d(am.get("data/g3d/skydome.g3db", Model.class));
     	floor.materials.get(0).set(TextureAttribute.createDiffuse(am.get("data/g3d/concrete.png", Texture.class)));
     	stage3d.addActor3d(skydome);
 		stage3d.addActor3d(floor);
+		knight.rotate(0f, -90f, 0f);
 		testActor3d();
-		knight.rotate(0f,-90f, 0f);
-		knight.setPosition(50f, 0f, 0f);
     	//testGroup3d();
     	//testStage3d();
     }
     
     //
-
+ 
+    public float deg = 0;
     @Override
     public void render () {
         Gdx.gl.glClearColor(1, 1, 1, 1);
@@ -169,22 +169,20 @@ public class Scene3dDemo implements ApplicationListener {
     	camController.update();
     	fpsText.setText("Fps: " + Gdx.graphics.getFramesPerSecond());
     	visibleText.setText("Visible: " + stage3d.getRoot().visibleCount);
-    	//stage3d.getModelBatch().render(axesActor);
 		if (upKey) {
-			//knight.rotateX(-180); about turn
 			knight.addAction3d(Actions3d.moveBy(1f, 0f, 0f, 1f));
 		} 
 		else if (downKey) {
-			//knight.rotateX(180); about turn
 			knight.addAction3d(Actions3d.moveBy(-1f, 0f, 0f, 1f));
 		}
 		else if (rightKey) {
-			knight.rotateX(90f);
-			//knight.rotate(0f, 90f, 0f);
+			deg += 1;
+			//knight.addAction3d(Actions3d.rotateBy(5f, 0f, 0f, 5f));
+			knight.rotateYaw(deg);
 		} 
 		else if (leftKey) {
-			knight.rotateX(-90f);
-			//knight.rotate(0f, -90f, 0f);
+			deg -= 1;
+			knight.rotateYaw(deg);
 		} 
     }
 

@@ -1,5 +1,6 @@
 package scene3d;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g3d.Environment;
 import com.badlogic.gdx.graphics.g3d.Material;
@@ -7,15 +8,18 @@ import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
+import com.badlogic.gdx.graphics.g3d.utils.AnimationController;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
+import com.badlogic.gdx.math.collision.Ray;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.DelayedRemovalArray;
+import com.badlogic.gdx.utils.Disposable;
 
 
-public class Actor3d extends ModelInstance {
+public class Actor3d extends ModelInstance implements Disposable {
 	private Stage3d stage3d;
 	private Group3d parent;
 	
@@ -34,6 +38,8 @@ public class Actor3d extends ModelInstance {
 	float originX, originY, originZ;
 	float scaleX = 1, scaleY = 1, scaleZ = 1;
 	float rotation = 0;
+	float rotationX = 0, rotationY = 0, rotationZ = 0;
+	private AnimationController animation;
 	
 	public Actor3d(){
 		this(new Model());
@@ -49,11 +55,12 @@ public class Actor3d extends ModelInstance {
 		super(model);
 		setPosition(x,y,z);
 		//boundBox = model.meshes.get(0).calculateBoundingBox();
-		//setOrigin(boundBox.max.x, boundBox.max.y, boundBox.max.z);
 		calculateBoundingBox(boundBox);
+		setOrigin(boundBox.max.x, boundBox.max.y, boundBox.max.z);
         center.set(boundBox.getCenter());
         dimensions.set(boundBox.getDimensions());
 		radius = dimensions.len() / 2f;
+		animation = new AnimationController(this);
 	}
 	
 	/** Updates the actor3d based on time. Typically this is called each frame by {@link Stage3d#act(float)}.
@@ -64,12 +71,13 @@ public class Actor3d extends ModelInstance {
 		for (int i = 0; i < actions.size; i++) {
 			Action3d action3d = actions.get(i);
 			if (action3d.act(delta) && i < actions.size) {
-				//Gdx.app.log("", "Action"+i);
 				actions.removeIndex(i);
 				action3d.setActor3d(null);
 				i--;
 			}
 		}
+		if (animation.inAction)
+			animation.update(delta);
 	}
 	
 	public void draw(ModelBatch modelBatch, Environment environment){
@@ -187,6 +195,11 @@ public class Actor3d extends ModelInstance {
 		this.parent = parent;
 	}
 	
+	private static final Vector3 position = new Vector3();
+	public boolean isCullable(final Camera cam) {
+	    return cam.frustum.sphereInFrustum(getTransform().getTranslation(position).add(center), radius);
+    }
+	
 	public boolean isVisible () {
 		return visible;
 	
@@ -195,6 +208,17 @@ public class Actor3d extends ModelInstance {
 	public void setVisible (boolean visible) {
 		this.visible = visible;
 	}
+	
+	/** @return -1 on no intersection, or when there is an intersection: the squared distance between the center of this 
+     * object and the point on the ray closest to this object when there is intersection. */
+    public float intersects(Ray ray) {
+        transform.getTranslation(position).add(center);
+        final float len = ray.direction.dot(position.x-ray.origin.x, position.y-ray.origin.y, position.z-ray.origin.z);
+        if (len < 0f)
+            return -1f;
+        float dist2 = position.dst2(ray.origin.x+ray.direction.x*len, ray.origin.y+ray.direction.y*len, ray.origin.z+ray.direction.z*len);
+        return (dist2 <= radius * radius) ? dist2 : -1f;
+    }
 
 	/* Sets the originx , originy and originz used for rotation */
 	public void setOrigin (float originX, float originY, float originZ) {
@@ -219,8 +243,23 @@ public class Actor3d extends ModelInstance {
 	
 	public void setRotation(float degrees) {
 		this.rotation = degrees;
-		this.rotate(degrees);
+		//this.rotate(degrees);
 		transform.setToRotation(originX, originY, originZ, rotation);
+	}
+	
+	public void setRotationX(float degrees){
+		this.rotationX = degrees;
+		transform.setToRotation(Vector3.X, degrees);
+	}
+	
+	public void setRotationY(float degrees){
+		this.rotationX = degrees;
+		transform.setToRotation(Vector3.Y, degrees);
+	}
+	
+	public void setRotationZ(float degrees){
+		this.rotationZ = degrees;
+		transform.setToRotation(Vector3.Z, degrees);
 	}
 	
 	public void rotate (float degrees) {
@@ -385,5 +424,22 @@ public class Actor3d extends ModelInstance {
 	
 	public void setTransform(Matrix4 transform){
 		this.transform = transform;
+	}
+	
+	public BoundingBox getBoundingBox(){
+		return boundBox;
+	}
+	
+	public void setBoundingBox(BoundingBox box){
+		boundBox = box;
+	}
+	
+	public AnimationController getAnimation(){
+		return animation;
+	}
+
+	@Override
+	public void dispose() {
+		//super.dispose(); FIXME: update gdx
 	}
 }

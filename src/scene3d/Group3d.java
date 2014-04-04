@@ -67,6 +67,7 @@ public class Group3d extends Actor3d{
 	     //modelBatch.render(children, environment); maybe faster 
 	     SnapshotArray<Actor3d> children = this.children;
 		 Actor3d[] actors = children.begin();
+		 visibleCount = 0;
 		 for (int i = 0, n = children.size; i < n; i++){
 			 if(actors[i] instanceof Group3d){
 	    		 ((Group3d) actors[i]).drawChildren(modelBatch, environment);
@@ -93,12 +94,10 @@ public class Group3d extends Actor3d{
 					//child.z = cz + offsetZ;
 					child.setPosition(cx + offsetX, cy + offsetY, cz + offsetZ);
 					child.scale(sx + offsetScaleX, sy + offsetScaleY, sz + offsetScaleZ);
-					visibleCount = 0;
-			        if (isVisible(getStage3d().getCamera(), child)) {
-			            modelBatch.render(child, environment);
+			        if (child.isCullable(getStage3d().getCamera())) {
+			        	child.draw(modelBatch, environment);
 			            visibleCount++;
 			        }
-					child.draw(modelBatch, environment);
 					child.x = cx;
 					child.y = cy;
 					child.z = cz;
@@ -114,27 +113,6 @@ public class Group3d extends Actor3d{
 			 }
 		 }
 		 children.end();
-	}
-	
-	private Vector3 position = new Vector3();
-	protected boolean isVisible(final Camera cam, final Actor3d actor3d) {
-		actor3d.getTransform().getTranslation(position);
-	    position.add(actor3d.center);
-	    return cam.frustum.sphereInFrustum(position, actor3d.radius);
-    }
-	
-	private Matrix4 add(Matrix4 first, Matrix4 second){
-		Matrix4 temp = first.cpy();
-		for(int i=0;i<first.val.length;i++)
-			temp.val[i] += second.val[i];
-		return temp;
-	}
-	
-	private Matrix4 sub(Matrix4 first, Matrix4 second){
-		Matrix4 temp = first.cpy();
-		for(int i=0;i<first.val.length;i++)
-			temp.val[i] -= second.val[i];
-		return temp;
 	}
 	
 	/** Set the Batch's transformation matrix, often with the result of {@link #computeTransform()}. Note this causes the batch to
@@ -212,25 +190,6 @@ public class Group3d extends Actor3d{
             return true;
     }
     
-    /*@Override
-    public void addAction3d (Action3d action){
-    	super.addAction3d(action);
-    	Actor3d[] actors = children.begin();
-        for(int i = 0, n = children.size; i < n; i++){
-        	actors[i].addAction3d(action);
-       }
-       children.end();
-    }
-
-    @Override
-	public void removeAction3d (Action3d action) {
-		super.removeAction3d(action);
-		Actor3d[] actors = children.begin();
-        for (int i = 0, n = children.size; i < n; i++)
-                actors[i].removeAction3d(action);
-        children.end();
-	}*/
-    
     /** Called when actors are added to or removed from the group. */
     protected void childrenChanged () {
     }
@@ -300,4 +259,10 @@ public class Group3d extends Actor3d{
             children.end();
     }
 
+	@Override
+	public void dispose() {
+		super.dispose();
+		for(Actor3d actor3d: children)
+			actor3d.dispose();
+	}
 }

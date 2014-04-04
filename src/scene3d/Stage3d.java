@@ -33,10 +33,15 @@ import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
 import com.badlogic.gdx.graphics.g3d.model.MeshPart;
 import com.badlogic.gdx.graphics.g3d.model.Node;
 import com.badlogic.gdx.graphics.g3d.model.NodePart;
+import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.Intersector;
+import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Quaternion;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.math.collision.Ray;
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.EventListener;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
@@ -62,6 +67,8 @@ public class Stage3d extends InputAdapter implements Disposable {
 	private Actor3d selectedActor;
 	private Material selectionMaterial;
     private Material originalMaterial;
+    
+    private boolean canHit = false;
 
 
 	/** Creates a stage with a {@link #setViewport(float, float, boolean) viewport} equal to the device screen resolution. The stage
@@ -92,8 +99,8 @@ public class Stage3d extends InputAdapter implements Disposable {
 		camera.far = 300f;
 		camera.update();
 		environment = new Environment();
-		environment.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.4f, 0.4f, 0.4f, 1f));
-		environment.add(new DirectionalLight().set(0.8f, 0.8f, 0.8f, -1f, -0.8f, -0.2f));
+		environment.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.9f, 0.9f, 0.9f, 1f));
+		//environment.add(new DirectionalLight().set(0.8f, 0f, 0f, -1f, -0.8f, -0.2f));
 
 		setViewport(width, height, keepAspectRatio);
 	    selectionMaterial = new Material();
@@ -197,6 +204,7 @@ public class Stage3d extends InputAdapter implements Disposable {
 	 * enter and exit events.
 	 * @param delta Time in seconds since the last frame. */
 	public void act(float delta) {
+		updateController(delta);
 		root.act(delta);
 	}
 
@@ -234,6 +242,7 @@ public class Stage3d extends InputAdapter implements Disposable {
 	/** Removes the root's children, actions, and listeners. */
 	public void clear () {
 		unfocusAll();
+		root.dispose();
 		root.clear();
 	}
 
@@ -301,13 +310,23 @@ public class Stage3d extends InputAdapter implements Disposable {
 	public Environment getEnvironment(){
 		return environment;
 	}
+	
+	public void enableHit(){
+		canHit = true;
+	}
+	
+	public void disableHit(){
+		canHit = false;
+	}
 
 	@Override
 	public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-		Actor3d actor3d = getObject(screenX, screenY);
-		selecting = actor3d != null?1:-1;
-		if(actor3d != null && actor3d.getName() != null)
-			Gdx.app.log("", ""+actor3d.getName());
+		if(canHit){
+			Actor3d actor3d = getObject(screenX, screenY);
+			selecting = actor3d != null?1:-1;
+			if(actor3d != null && actor3d.getName() != null)
+				Gdx.app.log("", ""+actor3d.getName());
+		}
         return selecting > 0;
 		//return false;
 	}
@@ -329,29 +348,12 @@ public class Stage3d extends InputAdapter implements Disposable {
     public boolean touchDragged (int screenX, int screenY, int pointer) {
         return selecting >= 0;
     }
-	
-	/*public void setSelected (Actor3d actor3d) {
-        if (selectedActor == actor3d) return;
-        if (selected >= 0) {
-            Material mat = root.getChildren().get(selected).materials.get(0);
-            mat.clear();
-            mat.set(originalMaterial);
-        }
-        selected = value;
-        if (selected >= 0) {
-            Material mat = root.getChildren().get(selected).materials.get(0);
-            originalMaterial.clear();
-            originalMaterial.set(mat);
-            mat.clear();
-            mat.set(selectionMaterial);
-        }
-    }*/
  
 	Vector3 position = new Vector3();
 	int result = -1;
     float distance = -1;
     
-    public Actor3d getObject (int screenX, int screenY) {
+    public Actor3d getObject(int screenX, int screenY) {
     	 Actor3d temp = null;
     	 SnapshotArray<Actor3d> children = root.getChildren();
     	 Actor3d[] actors = children.begin();
@@ -366,38 +368,26 @@ public class Stage3d extends InputAdapter implements Disposable {
     
     public Actor3d hit3d(int screenX, int screenY, Actor3d actor3d) {
         Ray ray = camera.getPickRay(screenX, screenY);
-        actor3d.getTransform().getTranslation(position);
-        position.add(actor3d.center);
-        float dist2 = ray.origin.dst2(position);
-        if (distance >= 0f && dist2 > distance) return null;
-        if (Intersector.intersectRaySphere(ray, position, actor3d.radius, null)) {
-           distance = dist2;
-           return actor3d;
+        float distance = -1;
+        final float dist2 = actor3d.intersects(ray);
+        if (dist2 >= 0f && (distance < 0f || dist2 <= distance)) { 
+            distance = dist2;
+            return actor3d;
         }
         return null;
     }
     
     public Actor3d hit3d(int screenX, int screenY, Group3d group3d) {
-    	Ray ray = camera.getPickRay(screenX, screenY);
-        float distance = -1;
-        for (int i = 0; i < group3d.getChildren().size; ++i) {
-            final Actor3d child = group3d.getChildren().get(i);
-            child.getTransform().getTranslation(position);
-            position.add(child.center);
-            final float len = ray.direction.dot(position.x-ray.origin.x, position.y-ray.origin.y, position.z-ray.origin.z);
-            if (len < 0f)
-                continue;
-     
-            float dist2 = position.dst2(ray.origin.x+ray.direction.x*len, ray.origin.y+ray.direction.y*len, ray.origin.z+ray.direction.z*len);
-            if (distance >= 0f && dist2 > distance) 
-                continue;
-     
-            if (dist2 <= child.radius * child.radius) {
-                distance = dist2;
-                return child;
-            }
-        }
-        return null;
+    	 Actor3d temp = null;
+    	 SnapshotArray<Actor3d> children = group3d.getChildren();
+    	 Actor3d[] actors = children.begin();
+         for(int i = 0, n = children.size; i < n; i++){
+        	 temp = hit3d(screenX, screenY, actors[i]);
+        	 if(actors[i] instanceof Group3d)
+        		 temp = hit3d(screenX, screenY, (Group3d)actors[i]);
+         }
+         children.end();
+         return temp;
     }
 	
 	private Ray pickRay;
@@ -673,21 +663,134 @@ public class Stage3d extends InputAdapter implements Disposable {
 		return meshPart.numVertices*3;
 	}
 
-	private void reorientIntersection(Vector3 intersection)  {
-		// the intersection point needs to be flipped as well
-		float temp = intersection.y;
-		intersection.y = intersection.z;
-		intersection.z = -temp;
-	}
+	
+    private static float duration;
+    private static float time;
+	private static Interpolation interpolation;
+    private static boolean moveCompleted;
+    private static float lastPercent;
+    private static float panSpeedX, panSpeedY, panSpeedZ;
+    private static float percentDelta;
 
-	private void setForBillBoard(Vector3 intersection, Vector3 nor) {
-		// this pushes the bullet out a bit from the wall
-		intersection.add(nor.cpy().scl(.1f, .1f, .1f));
+    public void moveTo(float x, float y, float z) {
+        moveTo(x, y, x, 0f);
+    }
+    
+    public void moveTo(float x, float y, float z, float duration) {
+        moveBy(x-camera.position.x, y-camera.position.y, y-camera.position.y, duration);
+    }
+    
+    public void moveBy(float amountX, float amountY, float amountZ) {
+         moveBy(amountX, amountY, amountZ, 0f);
+    }
+
+    public void moveBy(float amountX, float amountY, float amountZ, float duration) {
+         moveBy(amountX, amountY, amountZ, duration, null);
+    }
+
+    public static void moveBy(float amountX, float amountY, float amountZ, float dur, Interpolation interp) {
+    	duration = dur;
+     	interpolation = interp;
+     	panSpeedX = amountX;
+     	panSpeedY = amountY;
+     	panSpeedZ = amountZ;
+     	lastPercent = 0;
+     	time = 0;
+        moveCompleted = false;
+    }
+    
+    private void moveByAction(float delta){
+        time += delta;
+        moveCompleted = time >= duration;
+        float percent;
+        if (moveCompleted)
+           percent = 1;
+        else {
+            percent = time / duration;
+            if (interpolation != null) percent = interpolation.apply(percent);
+        }
+        percentDelta = percent - lastPercent;
+    	camera.translate(panSpeedX * percentDelta, panSpeedY * percentDelta, panSpeedZ * percentDelta);
+        lastPercent = percent;
+        if (moveCompleted) interpolation = null;
+    }
+    
+    public void resetCamera(){
+    	camera.position.set(10f, 10f, 10f);
+    }
+    
+	private float offsetX = 10f, offsetY = 10f, offsetZ = 10f;
+	private float folllowSpeed = 0.5f;
+	private Actor3d followedActor3d;
+	private boolean lookAt;
+	
+	/*
+	 * The camera follows the actor3d as it moves along the scene
+	 * @param actor3d The actor3d the camera has to follow , if it is null the camera stops following
+	 * @param lookAt whether the camera should always be pointing to the actor3d
+	 */
+	public  void followActor3d(Actor3d actor3d, boolean lookAt){
+		followedActor3d = actor3d;
+		this.lookAt = lookAt;
+	}
+	
+	private void updateController(float delta){
+		if(!moveCompleted)
+    		moveByAction(delta);
+		if (followedActor3d != null) {
+			moveTo(followedActor3d.x+offsetX, followedActor3d.y+offsetY, followedActor3d.z+offsetZ, folllowSpeed);
+			if(lookAt)
+				camera.lookAt(followedActor3d.x, followedActor3d.y, followedActor3d.z);
+			/*
+			followedActor3d.getTransform().getTranslation(camera.direction);
+			current.set(position).sub(camera.direction);
+			desired.set(desiredLocation).rot(followedActor3d.getTransform()).add(desiredOffset);
+			final float desiredDistance = desired.len();
+			if (rotationSpeed < 0)
+				current.set(desired).nor().mul(desiredDistance);
+			else if (rotationSpeed == 0 || Vector3.tmp.set(current).dst2(desired) < rotationOffsetSq) 
+				current.nor().mul(desiredDistance);
+			else {
+				current.nor();
+				desired.nor();
+				rotationAxis.set(current).crs(desired);
+				float angle = (float)Math.acos(current.dot(desired)) * MathUtils.radiansToDegrees;
+				final float maxAngle = rotationSpeed * delta;
+				if (Math.abs(angle) > maxAngle) {
+					angle = (angle < 0) ? -maxAngle : maxAngle;
+				}
+				current.rot(rotationMatrix.idt().rotate(rotationAxis, angle));
+				current.mul(desiredDistance);
+			}
+
+			current.add(camera.direction);
+			absoluteSpeed = Math.min(absoluteSpeed + acceleration, current.dst(position) / delta);
+			position.add(speed.set(current).sub(position).nor().mul(absoluteSpeed * delta));
+			if (bounds.isValid()) {
+				if (position.x < bounds.min.x) position.x = bounds.min.x;
+				if (position.x > bounds.max.x) position.x = bounds.max.x;
+				if (position.y < bounds.min.y) position.y = bounds.min.y;
+				if (position.y > bounds.max.y) position.y = bounds.max.y;
+				if (position.z < bounds.min.z) position.z = bounds.min.z;
+				if (position.z > bounds.max.z) position.z = bounds.max.z;
+			}
+			if (offsetBounds.isValid()) {
+				Vector3.tmp.set(position).sub(camera.direction);
+				if (Vector3.tmp.x < offsetBounds.min.x) position.x = offsetBounds.min.x + camera.direction.x;
+				if (Vector3.tmp.x > offsetBounds.max.x) position.x = offsetBounds.max.x + camera.direction.x;
+				if (Vector3.tmp.y < offsetBounds.min.y) position.y = offsetBounds.min.y + camera.direction.y;
+				if (Vector3.tmp.y > offsetBounds.max.y) position.y = offsetBounds.max.y + camera.direction.y;
+				if (Vector3.tmp.z < offsetBounds.min.z) position.z = offsetBounds.min.z + camera.direction.z;
+				if (Vector3.tmp.z > offsetBounds.max.z) position.z = offsetBounds.max.z + camera.direction.z;
+			}
+			camera.direction.add(target.set(targetLocation)
+			.rot(followedActor3d.getTransform()).add(targetOffset)).sub(position).nor();*/
+		}
 	}
 
 	@Override
 	public void dispose() {
-		clear();
 		modelBatch.dispose();
+		clear();
 	}
 }

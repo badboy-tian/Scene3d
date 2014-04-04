@@ -232,6 +232,7 @@ public class Actor3d extends ModelInstance implements Disposable {
 		this.y = y;
 		this.z = z;
 		transform.setToTranslationAndScaling(this.x, this.y, this.z, scaleX, scaleY, scaleZ);
+		transform.mul(rotationMatrix);
 	}
 	
 	public void translate(float x, float y, float z) {
@@ -239,6 +240,7 @@ public class Actor3d extends ModelInstance implements Disposable {
 		this.y += y;
 		this.z += z;
 		transform.setToTranslationAndScaling(this.x, this.y, this.z, scaleX, scaleY, scaleZ);
+		transform.mul(rotationMatrix);
 	}
 	float yaw = 0f,pitch =0f, roll=0f;
 	

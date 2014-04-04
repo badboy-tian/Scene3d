@@ -66,12 +66,16 @@ public class Group3d extends Actor3d{
 			 else{
 					float offsetX = x, offsetY = y, offsetZ = z;
 					float offsetScaleX = scaleX, offsetScaleY = scaleY, offsetScaleZ = scaleZ;
+					float offsetYaw = yaw, offsetPitch = pitch, offsetRoll = roll;
 					x = 0;
 					y = 0;
 					z = 0;
 					scaleX = 0;
 					scaleY = 0;
 					scaleZ = 0;
+					yaw = 0;
+					pitch = 0;
+					roll = 0;
 					Actor3d child = actors[i];
 					if (!child.isVisible()) continue;
 					/*Matrix4 diff = sub(child.getTransform(), getTransform());
@@ -80,11 +84,13 @@ public class Group3d extends Actor3d{
 					child.draw(modelBatch, environment);*/
 					float cx = child.x, cy = child.y, cz = child.z;
 					float sx = child.scaleX, sy = child.scaleY, sz = child.scaleZ;
+					float ry = child.yaw, rp = child.pitch, rr = child.roll;
 					//child.x = cx + offsetX;
 					//child.y = cy + offsetY;
 					//child.z = cz + offsetZ;
 					child.setPosition(cx + offsetX, cy + offsetY, cz + offsetZ);
 					child.scale(sx + offsetScaleX, sy + offsetScaleY, sz + offsetScaleZ);
+					child.setRotation(ry + offsetYaw, rp + offsetPitch, rr +offsetRoll);
 			        if (child.isCullable(getStage3d().getCamera())) {
 			        	child.draw(modelBatch, environment);
 			            visibleCount++;
@@ -101,6 +107,12 @@ public class Group3d extends Actor3d{
 					scaleX = offsetScaleX;
 					scaleY = offsetScaleY;
 					scaleZ = offsetScaleZ;
+					child.yaw = ry;
+					child.pitch = rp;
+					child.roll = rr;
+					yaw = offsetYaw;
+					pitch = offsetPitch;
+					roll = offsetRoll;
 			 }
 		 }
 		 children.end();

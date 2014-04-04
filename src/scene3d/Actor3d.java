@@ -233,31 +233,61 @@ public class Actor3d extends ModelInstance implements Disposable {
 		transform.mul(rotationMatrix);
 	}
 	
-	public void rotate(float yaw, float pitch, float roll){
-		this.yaw = yaw;
-		this.pitch = pitch;
-		this.roll = roll;
+	public void setRotation(float newYaw, float newPitch, float newRoll){
+		yaw = newYaw;
+		pitch = newPitch;
+		roll = newRoll;
 		rotationMatrix = transform.setFromEulerAngles(yaw, pitch, roll).cpy();
 		transform.setToTranslationAndScaling(x, y, z, scaleX, scaleY, scaleZ);
 		transform.mul(rotationMatrix);
 	}
 	
-	public void rotateYaw(float yaw){
-		this.yaw = yaw;
+	public void setYaw(float newYaw){
+		yaw = newYaw;
 		rotationMatrix = transform.setFromEulerAngles(yaw, pitch, roll).cpy();
 		transform.setToTranslationAndScaling(x, y, z, scaleX, scaleY, scaleZ);
 		transform.mul(rotationMatrix);
 	}
 	
-	public void rotatePitch(float pitch){
-		this.pitch = pitch;
+	public void setPitch(float newPitch){
+		pitch = newPitch;
 		rotationMatrix = transform.setFromEulerAngles(yaw, pitch, roll).cpy();
 		transform.setToTranslationAndScaling(x, y, z, scaleX, scaleY, scaleZ);
 		transform.mul(rotationMatrix);
 	}
 	
-	public void rotateRoll(float roll){
-		this.roll = roll;
+	public void setRoll(float newRoll){
+		roll = newRoll;
+		rotationMatrix = transform.setFromEulerAngles(yaw, pitch, roll).cpy();
+		transform.setToTranslationAndScaling(x, y, z, scaleX, scaleY, scaleZ);
+		transform.mul(rotationMatrix);
+	}
+	
+	public void rotate(float amountYaw, float amountPitch, float amountRoll){
+		yaw += amountYaw;
+		pitch += amountPitch;
+		roll += amountRoll;
+		rotationMatrix = transform.setFromEulerAngles(yaw, pitch, roll).cpy();
+		transform.setToTranslationAndScaling(x, y, z, scaleX, scaleY, scaleZ);
+		transform.mul(rotationMatrix);
+	}
+	
+	public void rotateYaw(float amountYaw){
+		yaw += amountYaw;
+		rotationMatrix = transform.setFromEulerAngles(yaw, pitch, roll).cpy();
+		transform.setToTranslationAndScaling(x, y, z, scaleX, scaleY, scaleZ);
+		transform.mul(rotationMatrix);
+	}
+	
+	public void rotatePitch(float amountPitch){
+		pitch += amountPitch;
+		rotationMatrix = transform.setFromEulerAngles(yaw, pitch, roll).cpy();
+		transform.setToTranslationAndScaling(x, y, z, scaleX, scaleY, scaleZ);
+		transform.mul(rotationMatrix);
+	}
+	
+	public void rotateRoll(float amountRoll){
+		roll += amountRoll;
 		rotationMatrix = transform.setFromEulerAngles(yaw, pitch, roll).cpy();
 		transform.setToTranslationAndScaling(x, y, z, scaleX, scaleY, scaleZ);
 		transform.mul(rotationMatrix);

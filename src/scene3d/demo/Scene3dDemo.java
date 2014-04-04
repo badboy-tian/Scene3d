@@ -151,13 +151,12 @@ public class Scene3dDemo implements ApplicationListener {
 		stage3d.addActor3d(floor);
 		knight.rotate(0f, -90f, 0f);
 		testActor3d();
+		//stage3d.addAction3d(Actions3d.rotateBy(0f, 90f, 0f, 2f));
     	//testGroup3d();
     	//testStage3d();
     }
     
     //
- 
-    public float deg = 0;
     @Override
     public void render () {
         Gdx.gl.glClearColor(1, 1, 1, 1);
@@ -176,13 +175,10 @@ public class Scene3dDemo implements ApplicationListener {
 			knight.addAction3d(Actions3d.moveBy(-1f, 0f, 0f, 1f));
 		}
 		else if (rightKey) {
-			deg += 1;
-			//knight.addAction3d(Actions3d.rotateBy(5f, 0f, 0f, 5f));
-			knight.rotateYaw(deg);
+			knight.rotateYaw(1f);
 		} 
 		else if (leftKey) {
-			deg -= 1;
-			knight.rotateYaw(deg);
+			knight.rotateYaw(-1f);
 		} 
     }
 

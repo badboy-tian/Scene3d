@@ -92,8 +92,8 @@ public class Group3d extends Actor3d{
 					//child.x = cx + offsetX;
 					//child.y = cy + offsetY;
 					//child.z = cz + offsetZ;
-					child.setPosition(cx + offsetX, cy + offsetY, cz + offsetZ);
-					child.scale(sx + offsetScaleX, sy + offsetScaleY, sz + offsetScaleZ);
+					//child.setPosition(cx + offsetX, cy + offsetY, cz + offsetZ);
+					//child.scale(sx + offsetScaleX, sy + offsetScaleY, sz + offsetScaleZ);
 			        if (child.isCullable(getStage3d().getCamera())) {
 			        	child.draw(modelBatch, environment);
 			            visibleCount++;

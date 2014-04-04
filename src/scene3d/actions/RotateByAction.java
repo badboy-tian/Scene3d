@@ -23,14 +23,14 @@ public class RotateByAction extends RelativeTemporalAction {
 
         @Override
         protected void updateRelative (float percentDelta) {
-                actor3d.rotate(amount * percentDelta);
+            actor3d.rotate(amount * percentDelta);
         }
 
         public float getAmount () {
-                return amount;
+             return amount;
         }
 
         public void setAmount (float rotationAmount) {
-                amount = rotationAmount;
+             amount = rotationAmount;
         }
 }

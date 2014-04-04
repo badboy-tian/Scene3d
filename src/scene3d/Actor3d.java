@@ -240,32 +240,31 @@ public class Actor3d extends ModelInstance implements Disposable {
 		this.z += z;
 		transform.setToTranslationAndScaling(this.x, this.y, this.z, scaleX, scaleY, scaleZ);
 	}
+	float yaw = 0f,pitch =0f, roll=0f;
 	
-	public void setRotation(float degrees) {
-		this.rotation = degrees;
-		//this.rotate(degrees);
-		transform.setToRotation(originX, originY, originZ, rotation);
+	public void rotate(float degrees){
+		yaw = pitch = roll = degrees;
+		transform.setFromEulerAngles(degrees, degrees, degrees);
+		calculateTransforms();
+		transform.setToTranslationAndScaling(this.x, this.y, this.z, scaleX, scaleY, scaleZ);
 	}
 	
-	public void setRotationX(float degrees){
-		this.rotationX = degrees;
-		transform.setToRotation(Vector3.X, degrees);
+	public void rotate(float yaw, float pitch, float roll){
+		this.yaw = yaw;
+		this.pitch = pitch;
+		this.roll = roll;
+		transform.setFromEulerAngles(yaw, pitch, roll);
 	}
 	
-	public void setRotationY(float degrees){
-		this.rotationX = degrees;
-		transform.setToRotation(Vector3.Y, degrees);
+	Matrix4 rotationMatrix = new Matrix4();
+	public void rotateX(float degrees){
+		rotationMatrix = transform.setToRotation(0, 0, 1, degrees).cpy();
+		transform.setToTranslationAndScaling(x, y, z, scaleX, scaleY, scaleZ);
+		transform.mul(rotationMatrix);
 	}
 	
-	public void setRotationZ(float degrees){
-		this.rotationZ = degrees;
-		transform.setToRotation(Vector3.Z, degrees);
-	}
-	
-	public void rotate (float degrees) {
-		rotation += degrees;
-		setPosition(x, y, z);
-		transform.setToRotation(originX, originY, originZ, rotation);
+	public float getRotation () {
+		return rotation;
 	}
 	
 	public void setScale(float scaleX, float scaleY, float scaleZ) {
@@ -358,10 +357,6 @@ public class Actor3d extends ModelInstance implements Disposable {
 		return scaleX;
 	}
 	
-	public float getRotation () {
-		return rotation;
-	}
-	
 	public void setScaleY (float scaleY) {
 		this.scaleY = scaleY;
 		transform.scale(scaleX, scaleY, scaleZ);
@@ -440,6 +435,6 @@ public class Actor3d extends ModelInstance implements Disposable {
 
 	@Override
 	public void dispose() {
-		//super.dispose(); FIXME: update gdx
+		model.dispose();
 	}
 }

@@ -13,7 +13,7 @@ public class RotateToAction extends TemporalAction {
 
         @Override
         protected void update (float percent) {
-                actor3d.setRotation(start + (end - start) * percent);
+                actor3d.rotate(start + (end - start) * percent);
         }
 
         public float getRotation () {

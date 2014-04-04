@@ -20,6 +20,7 @@ import scene3d.Group3d;
 import scene3d.Stage3d;
 import scene3d.actions.Actions3d;
 
+import com.badlogic.gdx.graphics.g3d.loader.G3dModelLoader;
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
@@ -46,6 +47,7 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
+import com.badlogic.gdx.utils.UBJsonReader;
 
 public class Scene3dDemo implements ApplicationListener {
 	Stage3d stage3d;
@@ -106,9 +108,6 @@ public class Scene3dDemo implements ApplicationListener {
     	modelBuilder = new ModelBuilder();
     	model = modelBuilder.createBox(5f, 5f, 5f, new Material("Color", ColorAttribute.createDiffuse(Color.WHITE)),
                 Usage.Position | Usage.Normal);
-    	
-    	
-    	//actor1 = new Actor3d(am.get("knight.g3db", Model.class), -20f, 0f, 0f);
 		
     	model2 = modelBuilder.createBox(2f, 2f, 2f, new Material("Color", ColorAttribute.createDiffuse(Color.WHITE)),
                 Usage.Position | Usage.Normal);
@@ -145,19 +144,23 @@ public class Scene3dDemo implements ApplicationListener {
     	am.finishLoading();
     	knight = new Actor3d(am.get("data/g3d/knight.g3db", Model.class), -20f, 0f, 0f);
     	knight.getAnimation().inAction = true;
-    	knight.getAnimation().animate("walk", 2f);
+		knight.getAnimation().animate("Walk", -1, 1f, null, 0.2f);
     	skydome = new Actor3d(am.get("data/g3d/skydome.g3db", Model.class));
     	floor.materials.get(0).set(TextureAttribute.createDiffuse(am.get("data/g3d/concrete.png", Texture.class)));
     	stage3d.addActor3d(skydome);
 		stage3d.addActor3d(floor);
-		
 		testActor3d();
+		knight.rotate(0f,-90f, 0f);
+		knight.setPosition(50f, 0f, 0f);
     	//testGroup3d();
     	//testStage3d();
     }
+    
+    //
 
     @Override
     public void render () {
+        Gdx.gl.glClearColor(1, 1, 1, 1);
         Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
         stage3d.act();
     	stage3d.draw();
@@ -170,14 +173,18 @@ public class Scene3dDemo implements ApplicationListener {
 		if (upKey) {
 			//knight.rotateX(-180); about turn
 			knight.addAction3d(Actions3d.moveBy(1f, 0f, 0f, 1f));
-			knight.getAnimation().animate("Walk", -1, 1f, null, 0.2f);
 		} 
 		else if (downKey) {
 			//knight.rotateX(180); about turn
 			knight.addAction3d(Actions3d.moveBy(-1f, 0f, 0f, 1f));
 		}
 		else if (rightKey) {
-			knight.addAction3d(Actions3d.rotateBy(15f, 1f));
+			knight.rotateX(90f);
+			//knight.rotate(0f, 90f, 0f);
+		} 
+		else if (leftKey) {
+			knight.rotateX(-90f);
+			//knight.rotate(0f, -90f, 0f);
 		} 
     }
 

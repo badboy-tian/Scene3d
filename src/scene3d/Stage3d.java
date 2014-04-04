@@ -100,7 +100,7 @@ public class Stage3d extends InputAdapter implements Disposable {
 		camera.update();
 		environment = new Environment();
 		environment.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.9f, 0.9f, 0.9f, 1f));
-		//environment.add(new DirectionalLight().set(0.8f, 0f, 0f, -1f, -0.8f, -0.2f));
+		environment.add(new DirectionalLight().set(0.8f, 0f, 0f, -1f, -0.8f, -0.2f));
 
 		setViewport(width, height, keepAspectRatio);
 	    selectionMaterial = new Material();

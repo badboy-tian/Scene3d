@@ -144,7 +144,8 @@ public class Scene3dDemo implements ApplicationListener {
     	am.load("data/g3d/concrete.png", Texture.class);
     	am.finishLoading();
     	knight = new Actor3d(am.get("data/g3d/knight.g3db", Model.class), -20f, 0f, 0f);
-    	knight.setColor(Color.BLUE);
+    	knight.getAnimation().inAction = true;
+    	knight.getAnimation().animate("walk", 2f);
     	skydome = new Actor3d(am.get("data/g3d/skydome.g3db", Model.class));
     	floor.materials.get(0).set(TextureAttribute.createDiffuse(am.get("data/g3d/concrete.png", Texture.class)));
     	stage3d.addActor3d(skydome);

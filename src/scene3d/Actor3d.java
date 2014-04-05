@@ -233,6 +233,10 @@ public class Actor3d extends ModelInstance implements Disposable {
 		transform.mul(rotationMatrix);
 	}
 	
+	/* 
+	 *  Set the actor3d's rotation values to new yaw, pitch and roll
+	 *  @param newYaw, newPitch, newRoll these values must be within 360 degrees
+	 */
 	public void setRotation(float newYaw, float newPitch, float newRoll){
 		yaw = newYaw;
 		pitch = newPitch;
@@ -242,6 +246,10 @@ public class Actor3d extends ModelInstance implements Disposable {
 		transform.mul(rotationMatrix);
 	}
 	
+	/* 
+	 *  Set the actor3d's yaw
+	 *  @param newYaw value must be within 360 degrees
+	 */
 	public void setYaw(float newYaw){
 		yaw = newYaw;
 		rotationMatrix = transform.setFromEulerAngles(yaw, pitch, roll).cpy();
@@ -249,6 +257,10 @@ public class Actor3d extends ModelInstance implements Disposable {
 		transform.mul(rotationMatrix);
 	}
 	
+	/* 
+	 *  Set the actor3d's pitch
+	 *  @param newPitch value must be within 360 degrees
+	 */
 	public void setPitch(float newPitch){
 		pitch = newPitch;
 		rotationMatrix = transform.setFromEulerAngles(yaw, pitch, roll).cpy();
@@ -256,6 +268,10 @@ public class Actor3d extends ModelInstance implements Disposable {
 		transform.mul(rotationMatrix);
 	}
 	
+	/* 
+	 *  Set the actor3d's roll
+	 *  @param newRoll value must be within 360 degrees
+	 */
 	public void setRoll(float newRoll){
 		roll = newRoll;
 		rotationMatrix = transform.setFromEulerAngles(yaw, pitch, roll).cpy();
@@ -263,31 +279,43 @@ public class Actor3d extends ModelInstance implements Disposable {
 		transform.mul(rotationMatrix);
 	}
 	
+	
+	public static float normalizeDegrees(float degrees){
+	    float newAngle = degrees;
+	    while (newAngle < -360) newAngle += 360;
+	    while (newAngle > 360) newAngle -= 360;
+	    return newAngle;
+	}
+	
+	/* 
+	 *  Rotates the actor3d by the amount of yaw, pitch and roll
+	 *  @param amountYaw,amountPitch,amountRoll These values must be within 360 degrees
+	 */
 	public void rotate(float amountYaw, float amountPitch, float amountRoll){
-		yaw += amountYaw;
-		pitch += amountPitch;
-		roll += amountRoll;
+		yaw = normalizeDegrees(yaw + amountYaw);
+		pitch = normalizeDegrees(pitch + amountPitch);
+		roll = normalizeDegrees(roll + amountRoll);
 		rotationMatrix = transform.setFromEulerAngles(yaw, pitch, roll).cpy();
 		transform.setToTranslationAndScaling(x, y, z, scaleX, scaleY, scaleZ);
 		transform.mul(rotationMatrix);
 	}
 	
 	public void rotateYaw(float amountYaw){
-		yaw += amountYaw;
+		yaw = normalizeDegrees(yaw + amountYaw);
 		rotationMatrix = transform.setFromEulerAngles(yaw, pitch, roll).cpy();
 		transform.setToTranslationAndScaling(x, y, z, scaleX, scaleY, scaleZ);
 		transform.mul(rotationMatrix);
 	}
 	
 	public void rotatePitch(float amountPitch){
-		pitch += amountPitch;
+		pitch = normalizeDegrees(pitch + amountPitch);
 		rotationMatrix = transform.setFromEulerAngles(yaw, pitch, roll).cpy();
 		transform.setToTranslationAndScaling(x, y, z, scaleX, scaleY, scaleZ);
 		transform.mul(rotationMatrix);
 	}
 	
 	public void rotateRoll(float amountRoll){
-		roll += amountRoll;
+		roll = normalizeDegrees(roll + amountRoll);
 		rotationMatrix = transform.setFromEulerAngles(yaw, pitch, roll).cpy();
 		transform.setToTranslationAndScaling(x, y, z, scaleX, scaleY, scaleZ);
 		transform.mul(rotationMatrix);

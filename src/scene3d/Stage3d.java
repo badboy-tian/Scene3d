@@ -389,356 +389,106 @@ public class Stage3d extends InputAdapter implements Disposable {
          children.end();
          return temp;
     }
+    
+    
+ 	private float offsetX = 10f, offsetY = 10f, offsetZ = 10f;
+ 	private float folllowSpeed = 0.5f;
+ 	private Actor3d followedActor3d;
+ 	private boolean lookAt;
+ 	
+ 	/*
+ 	 * The camera follows the actor3d as it moves along the scene
+ 	 * @param actor3d The actor3d the camera has to follow , if it is null the camera stops following
+ 	 * @param lookAt whether the camera should always be pointing to the actor3d
+ 	 */
+ 	public  void followActor3d(Actor3d actor3d, boolean lookAt){
+ 		followedActor3d = actor3d;
+ 		this.lookAt = lookAt;
+ 	}
+ 	
+ 	/*
+ 	 * This sets the distance between the camera and the actor
+ 	 * @param offX the x distance from actor
+ 	 * @param offY the y distance from actor
+ 	 * @param offZ the z distance from actor
+ 	 */
+ 	public void followOffset(float offX, float offY, float offZ){
+ 		offsetX = offX;
+ 		offsetY = offY;
+ 		offsetZ = offZ;
+ 	}
 	
-	private Ray pickRay;
-	private Vector3 returnIntersection = new Vector3();
-	private Vector3[] returnTris = new Vector3[3];
-	private Array<Vector3[]> miTriangs = new Array<Vector3[]>();
-	private Actor3d hitActor;
-
-	public Actor3d hit(float x, float y) {
-		hitActor = null;
-		SnapshotArray<Actor3d> children = root.getChildren();
-		Actor3d[] actors = children.begin();
-		for (int i = 0, n = children.size; i < n; i++){
-			miTriangs.clear();
-			pickRay = camera.getPickRay(x, y);
-			getModelInstanceTriangles(actors[i].model, miTriangs);
-			if((getIntersectionTriangles(actors[i], pickRay, 
-					miTriangs, returnIntersection, returnTris)) != -1)
-				//Gdx.app.log("", actors[i].getName());
-				hitActor = actors[i];
-		}
-		children.end();
-		return hitActor;
-	}
-	
-	public Actor3d getHitActor(){
-		return hitActor;
-	}
-
-
-	/*
-	 * Written by Scott Griffy
-	 * The code in this class has only been tested on meshes (with applied rot+scale+pos) exported from blender to FBX then converted to G3Dj with fbx-conv
-	 * Works with multiple mesh parts (e.g. different objects in one scene in blender)
-	 * fbx-conv binaries can be found for windows on the page here:
-	 * http://libgdx.badlogicgames.com/fbx-conv/
-	 * 
-	 * TODO accept animations to change the mesh and raycast on the changed mesh
-	 * TODO return the texture UV coordinates.
-	 * 
-	 * Don't forget to add a triangulate modifier (you don't necessarily have to apply it)
-	 * I used the built-in FBX exporter in Blender 2.66
-	 * Also Y-Forward and Z-up (both positive) seems to work for me in the FBX exporter
-	 * 
-	 * Throughout these methods the variable "miARRtriangs" is used
-	 * It's just an ArrayMap that links models to arrays of vector3[3]s (triangles)
-	 * When the raycast checks a ModelInstance it looks up in this variable the triangle array corresponding to the ModelInstance's model
-	 * You can pre-fetch a "miARRtriangs" with "getModelInstanceArrTriangles" and an Array of ModelInstances.
-	 * This cuts down on CPU time during raycasts (very important on devices)
-	 * This works because models don't change (they will when I implement animations, but that's later)
-	 * 
-	 * You'll want to start by using "getIntersectionTriangles" on your array of ModelInstances
-	 * you'll have to feed "getIntersectionTriangles" an initialized Vector3 for the "intersection" parameter,
-	 * and a Vector3[3] array for the "triags" parameter
-	 * and a ModelInstance[1] array for the "mi" parameter (hacky return)
-	 * also of course your ModelInstance array and PickRay (cam.getPickRay(x, y)?)
-//			the method will set the first element of "mi" to
-//			the ModelInstance that the ray intersected, sets "intersection" to the intersection with that ModelInstance
-//			and sets the first 3 elements of "triags" to the vertices in the triangle that was intersected
-//			the "triags" can be used to calculate the normal with another method in this file
-	 * 
-	 * Also I don't think this works with ModelInstances with multiple models (don't know if this is possible)
-	 */
-
-	// used for the "miARRtriangs" object when iterating though an array of modelInstances,
-	private void getModelInstanceTriangles(Model mi, Array<Vector3[]> triangs) {
-		Iterator<Node> nodeIter = mi.nodes.iterator();
-		while (nodeIter.hasNext())
-		{
-			Node n = nodeIter.next();
-			n.calculateLocalTransform();
-			Iterator<NodePart> nodePartIter = n.parts.iterator();
-			while (nodePartIter.hasNext())
-			{
-				NodePart np = nodePartIter.next();
-				MeshPart meshPart = np.meshPart;
-				float[] triangsF = new float[this.getNumFloatTriangles(meshPart)];
-				this.getTriangles(meshPart, triangsF);
-				//float[] normals = new float[this.getNumFloatTriangles(meshPart)];
-				//this.getNormals(meshPart, normals);
-				for (int i = 0; i < meshPart.numVertices/3; ++i)
-				{
-					Vector3[] triVectors = new Vector3[3];
-					for (int c = 0; c < 3; ++c)
-					{
-						triVectors[c] = new Vector3(
-								triangsF[i*9+c*3],// the 9 is the triangle size (3 vectors = 9 floats)
-								triangsF[i*9+c*3+1],
-								triangsF[i*9+c*3+2]);
-					}
-					triangs.add(triVectors);
-				}
-			}
-		}
-	}
-
-	// the meatiest method
-	// this can be used by itself actually
-	private Ray tempPickRay = new Ray(new Vector3(), new Vector3());
-	private float getIntersectionTriangles(ModelInstance mi, Ray pickRay, 
-			Array<Vector3[]> miARRtriangs, Vector3 intersection, Vector3[] triags){
-		Vector3 intersect = new Vector3();
-		float closestIntersectionDistance = -1;
-		Iterator<Node> nodeIter = mi.nodes.iterator();
-		Iterator<Vector3[]> triangArr = miARRtriangs.iterator();
-		while (nodeIter.hasNext())
-		{
-			Node n = nodeIter.next();
-			Iterator<NodePart> nodePartIter = n.parts.iterator();
-			while (nodePartIter.hasNext())
-			{
-				NodePart np = nodePartIter.next();
-				MeshPart meshPart = np.meshPart;
-				//float[] triangs = triangArr.next();//new float[this.getNumFloatTriangles(meshPart)];
-				//this.getTriangles(meshPart, triangs);
-				//float[] normals = new float[this.getNumFloatTriangles(meshPart)];
-				//this.getNormals(meshPart, normals);
-				for (int i = 0; i < meshPart.numVertices/3; ++i)
-				{
-					Vector3[] triVectors = triangArr.next();//new Vector3[3];
-					/*
-						for (int c = 0; c < 3; ++c)
-						{
-							triVectors[c] = new Vector3(
-									triangs[i*9+c*3],// the 9 is the triangle size (3 vectors = 9 floats)
-									triangs[i*9+c*3+1],
-									triangs[i*9+c*3+2]);
-						}*/
-					// normals may not be used
-					/*
-						Vector3[] triNormals = new Vector3[3];
-						for (int c = 0; c < 3; ++c)
-						{
-							triNormals[c] = new Vector3(
-									triangs[i*9+c*3],
-									triangs[i*9+c*3+1],
-									triangs[i*9+c*3+2]);
-						}*/
-					tempPickRay.set(pickRay);
-					//n.calculateLocalTransform();// shouldnt be called on the render loop
-					tempPickRay.mul(mi.transform.cpy().inv());
-					tempPickRay.mul(n.globalTransform.cpy().inv());
-					if (tempPickRay != null && 
-							Intersector.intersectRayTriangle(
-									tempPickRay, 
-									triVectors[0], triVectors[1], triVectors[2], intersect))
-					{
-						/* the following code has been commented out for future debugging
-							for (int c = 0; c < 3; ++c)
-							{
-								Gdx.app.log("normals", "normals"+triNormals[c].x+"y"+triNormals[c].y+"z"+triNormals[c].z);
-							}
-						 */
-						float dist = intersect.dst(tempPickRay.origin);
-						//Gdx.app.log("distBot", ""+dist);
-						if (dist != -1 && (closestIntersectionDistance == -1 || dist < closestIntersectionDistance))
-						{
-							closestIntersectionDistance = dist;
-							intersection.set(intersect.cpy());
-							for (int c = 0; c < 3; ++c)
-							{
-								triags[c] = triVectors[c];
-							}
-						}
-
-					}
-				}
-			}
-		}
-		return closestIntersectionDistance;
-	}
-	// used to fetch triangles for the model (each meshpart)
-	private void getTriangles(MeshPart meshPart, float[] triags) {
-		// get the mesh of the mesh part (this holds the vertices+normals+UV+otherstuff)
-		Mesh mesh = meshPart.mesh;
-		// this changes based on the what stuff the mesh has (vertices+normals+UV+idk)
-		int floatsInAVertex = mesh.getVertexSize()/4;
-		//Gdx.app.log("floatsInAVertex", ""+floatsInAVertex);
-		// each vertices will need enough floats for all the info including vertices+normals+UV+otherstuff
-		float[] verts = new float[mesh.getNumVertices()*floatsInAVertex];
-		mesh.getVertices(verts);
-		// this is a list of all the indices in the mesh. Every 3 is a triangle also holds a lot of extra space for buffers
-		short[] indicesFull = new short[mesh.getNumIndices()];
-		mesh.getIndices(indicesFull);
-		// need to get rid of the extra indices not used by this MeshPart
-		short[] indices = new short[meshPart.numVertices];
-		int currIndex = 0;
-		for (int i = 0 ; i < indicesFull.length ; ++i)
-		{
-			// use only the indices in the mesh part's range
-			if (i >= meshPart.indexOffset && i < meshPart.indexOffset+meshPart.numVertices)
-			{
-				indices[currIndex] = indicesFull[i];
-				++currIndex;
-			}
-		}
-		// now make the triangle array
-		int indNum = 0;
-		while (indNum < meshPart.numVertices)
-		{
-			triags[indNum*3] = verts[indices[indNum]*floatsInAVertex];
-			triags[indNum*3+1] = verts[indices[indNum]*floatsInAVertex+1];
-			triags[indNum*3+2] = verts[indices[indNum]*floatsInAVertex+2];
-			indNum++;
-		}
-	}
-
-	// gets the normals for a meshPart (not really used)
-	private void getNormals(MeshPart meshPart, float[] normals){
-		// get the mesh of the mesh part (this holds the vertices+normals+UV+otherstuff)
-		Mesh mesh = meshPart.mesh;
-		// this changes based on the what stuff the mesh has (vertices+normals+UV+idk)
-		int floatsInAVertex = mesh.getVertexSize()/4;// sizeof(float)
-		// each vertices will need enough floats for all the info including vertices+normals+UV+otherstuff
-		float[] verts = new float[mesh.getNumVertices()*floatsInAVertex];
-		mesh.getVertices(verts);
-		// this is a list of all the indices in the mesh. Every 3 is a triangle also holds a lot of extra space for buffers
-		short[] indicesFull = new short[mesh.getNumIndices()];
-		mesh.getIndices(indicesFull);
-		// need to get rid of the extra indices not used by this MeshPart
-		short[] indices = new short[meshPart.numVertices];
-		int currIndex = 0;
-		for (int i = 0 ; i < indicesFull.length ; ++i)
-		{
-			// use only the indices in the mesh part's range
-			if (i >= meshPart.indexOffset && i < meshPart.indexOffset+meshPart.numVertices)
-			{
-				indices[currIndex] = indicesFull[i];
-				++currIndex;
-			}
-		}
-		// now make the normal array
-		int indNum = 0;
-		while (indNum < meshPart.numVertices)
-		{
-			/* this is found slightly differently than the triangles array because normals are USUALLY just after position in the vertex information
-			 * usually is capitalized because this only holds true for certain meshes and this code will break if the vertex information order is changed
-			 * TODO this means this code needs to be reworked to account for vertex information order
-			 */
-			normals[indNum*3] = verts[indices[indNum]*floatsInAVertex+3];
-			normals[indNum*3+1] = verts[indices[indNum]*floatsInAVertex+4];
-			normals[indNum*3+2] = verts[indices[indNum]*floatsInAVertex+5];
-			indNum++;
-		}
-	}
-	// this calculates the normal, (might be the wrong direction, idk about how the FBX/FBX-conv handle twisting)
-	private Vector3 calcNormU = new Vector3();
-	private Vector3 calcNormV = new Vector3();
-	private Vector3 calcNormTemp = new Vector3();
-	private Vector3 calcNormV2 = new Vector3(0, 1, 0).nor();
-
-	private void calcNormal(Vector3[] closestIntersectionTriang, 
-			boolean flipZ, Vector3 returnV, Quaternion quat){
-		// get the normal vector from the triangle hit
-		calcNormU = closestIntersectionTriang[1].cpy().sub(closestIntersectionTriang[0]);
-		calcNormV = closestIntersectionTriang[2].cpy().sub(closestIntersectionTriang[0]);
-		calcNormTemp.set(calcNormU.crs(calcNormV).nor());
-
-		if (flipZ)
-		{
-			// it's probably inverted (depends on exporter)
-			float tempNormal = calcNormTemp.y;
-			calcNormTemp.y = calcNormTemp.z;
-			calcNormTemp.z = -tempNormal;
-		}
-
-		// find quaternion from normal
-		quat.setFromCross(calcNormV2, calcNormTemp);
-
-		returnV.set(calcNormTemp);
-	}
-	private int getNumFloatTriangles(MeshPart meshPart){
-		return meshPart.numVertices*3;
-	}
-
-	
-    private static float duration;
-    private static float time;
-	private static Interpolation interpolation;
+    private static float moveDuration;
+    private static float moveTime;
     private static boolean moveCompleted;
-    private static float lastPercent;
+    private static float moveLastPercent;
     private static float panSpeedX, panSpeedY, panSpeedZ;
-    private static float percentDelta;
-
-    public void moveTo(float x, float y, float z) {
-        moveTo(x, y, x, 0f);
-    }
+    private static float movePercentDelta;
     
-    public void moveTo(float x, float y, float z, float duration) {
-        moveBy(x-camera.position.x, y-camera.position.y, y-camera.position.y, duration);
-    }
+    private static float rotateTime;
+    private static float rotateDuration;
+    private static float rotateYaw, rotatePitch, rotateRoll;
+    private static boolean rotateCompleted;
+    private static float rotateLastPercent;
+    private static float rotatePercentDelta;
     
-    public void moveBy(float amountX, float amountY, float amountZ) {
-         moveBy(amountX, amountY, amountZ, 0f);
+    public void moveCameraTo(float x, float y, float z, float duration) {
+        moveCameraBy(x-camera.position.x, y-camera.position.y, y-camera.position.y, duration);
     }
 
-    public void moveBy(float amountX, float amountY, float amountZ, float duration) {
-         moveBy(amountX, amountY, amountZ, duration, null);
-    }
-
-    public static void moveBy(float amountX, float amountY, float amountZ, float dur, Interpolation interp) {
-    	duration = dur;
-     	interpolation = interp;
+    public void moveCameraBy(float amountX, float amountY, float amountZ, float duration) {
+    	moveDuration = duration;
      	panSpeedX = amountX;
      	panSpeedY = amountY;
      	panSpeedZ = amountZ;
-     	lastPercent = 0;
-     	time = 0;
+     	moveLastPercent = 0;
+     	moveTime = 0;
         moveCompleted = false;
     }
-    
-    private void moveByAction(float delta){
-        time += delta;
-        moveCompleted = time >= duration;
-        float percent;
-        if (moveCompleted)
-           percent = 1;
-        else {
-            percent = time / duration;
-            if (interpolation != null) percent = interpolation.apply(percent);
-        }
-        percentDelta = percent - lastPercent;
-    	camera.translate(panSpeedX * percentDelta, panSpeedY * percentDelta, panSpeedZ * percentDelta);
-        lastPercent = percent;
-        if (moveCompleted) interpolation = null;
+   
+    /*
+     * rotates the pitch of camera (rotates camera around it's local x-axis) for viewing up and down
+     */
+    public void rotateCameraBy(float yaw, float pitch, float roll, float duration){
+    	rotateLastPercent = 0;
+    	rotateTime = 0;
+    	rotateYaw = yaw;
+    	rotatePitch = pitch;
+    	rotateRoll = roll;
+    	rotateDuration = duration;
+    	rotateCompleted = false;
     }
     
-    public void resetCamera(){
-    	camera.position.set(10f, 10f, 10f);
-    }
-    
-	private float offsetX = 10f, offsetY = 10f, offsetZ = 10f;
-	private float folllowSpeed = 0.5f;
-	private Actor3d followedActor3d;
-	private boolean lookAt;
-	
-	/*
-	 * The camera follows the actor3d as it moves along the scene
-	 * @param actor3d The actor3d the camera has to follow , if it is null the camera stops following
-	 * @param lookAt whether the camera should always be pointing to the actor3d
-	 */
-	public  void followActor3d(Actor3d actor3d, boolean lookAt){
-		followedActor3d = actor3d;
-		this.lookAt = lookAt;
-	}
-	
 	private void updateController(float delta){
-		if(!moveCompleted)
-    		moveByAction(delta);
-		if (followedActor3d != null) {
-			moveTo(followedActor3d.x+offsetX, followedActor3d.y+offsetY, followedActor3d.z+offsetZ, folllowSpeed);
+		if(!moveCompleted){
+			moveTime += delta;
+	        moveCompleted = moveTime >= moveDuration;
+	        float percent;
+	        if (moveCompleted)
+	           percent = 1;
+	        else {
+	            percent = moveTime / moveDuration;
+	        }
+	        movePercentDelta = percent - moveLastPercent;
+	    	camera.translate(panSpeedX * movePercentDelta, panSpeedY * movePercentDelta, panSpeedZ * movePercentDelta);
+	        moveLastPercent = percent;
+		}
+		if(!rotateCompleted){
+			rotateTime += delta;
+	    	rotateCompleted = rotateTime >= rotateDuration;
+	        float percent;
+	        if (rotateCompleted)
+	           percent = 1;
+	        else 
+	            percent = rotateTime / rotateDuration;
+	        rotatePercentDelta = percent - rotateLastPercent;
+	        camera.rotate(Vector3.Z, rotateYaw * rotatePercentDelta);
+	        camera.rotate(Vector3.X, rotatePitch * rotatePercentDelta);
+	        camera.rotate(Vector3.Y, rotateRoll * rotatePercentDelta);
+	        rotateLastPercent = percent;
+		}
+		if (followedActor3d != null) { 
+			moveCameraTo(followedActor3d.x+offsetX, followedActor3d.y+offsetY, followedActor3d.z+offsetZ, folllowSpeed);
 			if(lookAt)
 				camera.lookAt(followedActor3d.x, followedActor3d.y, followedActor3d.z);
 			/*

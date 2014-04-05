@@ -20,10 +20,10 @@ import scene3d.Group3d;
 import scene3d.Stage3d;
 import scene3d.actions.Actions3d;
 
-import com.badlogic.gdx.graphics.g3d.loader.G3dModelLoader;
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
@@ -47,7 +47,6 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
-import com.badlogic.gdx.utils.UBJsonReader;
 
 public class Scene3dDemo implements ApplicationListener {
 	Stage3d stage3d;
@@ -58,8 +57,12 @@ public class Scene3dDemo implements ApplicationListener {
 	Model model, model2, model3;
 	Actor3d knight, actor2, actor3, floor, skydome;
 	Group3d group3d;
-	Label fpsText;
-	Label visibleText;
+	Label fpsLabel;
+	Label visibleLabel;
+	Label positionLabel;
+	Label rotationLabel;
+	Label positionCameraLabel;
+	Label rotationCameraLabel;
 	
 	public static void main(String[] argc) {
 		LwjglApplicationConfiguration cfg = new LwjglApplicationConfiguration();
@@ -76,12 +79,24 @@ public class Scene3dDemo implements ApplicationListener {
     	//2d stuff
     	stage2d = new Stage();
     	skin = new Skin(Gdx.files.internal("skin/uiskin.json"));
-    	fpsText = new Label("ff", skin);
-    	fpsText.setPosition(Gdx.graphics.getWidth() - 80, Gdx.graphics.getHeight()-40);
-    	visibleText = new Label("ff", skin);
-    	visibleText.setPosition(Gdx.graphics.getWidth() - 80, Gdx.graphics.getHeight()- 60);
-    	stage2d.addActor(fpsText);
-    	stage2d.addActor(visibleText);
+    	fpsLabel = new Label("ff", skin);
+    	fpsLabel.setPosition(Gdx.graphics.getWidth() - 260, Gdx.graphics.getHeight()-40);
+    	visibleLabel = new Label("ff", skin);
+    	visibleLabel.setPosition(Gdx.graphics.getWidth() - 260, Gdx.graphics.getHeight()- 60);
+    	positionLabel = new Label("Position", skin);
+    	positionLabel.setPosition(Gdx.graphics.getWidth() - 260, Gdx.graphics.getHeight()- 80);
+    	rotationLabel = new Label("Rotation", skin);
+    	rotationLabel.setPosition(Gdx.graphics.getWidth() - 260, Gdx.graphics.getHeight()- 100);
+    	positionCameraLabel = new Label("Position", skin);
+    	positionCameraLabel.setPosition(20, Gdx.graphics.getHeight()- 40);
+    	rotationCameraLabel = new Label("Rotation", skin);
+    	rotationCameraLabel.setPosition(20, Gdx.graphics.getHeight()- 60);
+    	stage2d.addActor(fpsLabel);
+    	stage2d.addActor(visibleLabel);
+    	stage2d.addActor(positionLabel);
+    	stage2d.addActor(rotationLabel);
+    	stage2d.addActor(positionCameraLabel);
+    	stage2d.addActor(rotationCameraLabel);
     	stage2d.addListener(new InputListener(){
     		@Override
     		public boolean keyUp(InputEvent event, int keycode) {
@@ -125,7 +140,6 @@ public class Scene3dDemo implements ApplicationListener {
 		im.addProcessor(camController);
 		Gdx.input.setInputProcessor(im);
     	stage3d.touchable = Touchable.enabled; // only then will it detect hit actor3d
-    	//createAxes();
     	
     	ModelBuilder builder = new ModelBuilder();
 		builder.begin();
@@ -142,21 +156,22 @@ public class Scene3dDemo implements ApplicationListener {
     	am.load("data/g3d/skydome.g3db", Model.class);
     	am.load("data/g3d/concrete.png", Texture.class);
     	am.finishLoading();
-    	knight = new Actor3d(am.get("data/g3d/knight.g3db", Model.class), -20f, 10f, 0f);
+    	knight = new Actor3d(am.get("data/g3d/knight.g3db", Model.class), -20f, 18f, 0f);
     	knight.getAnimation().inAction = true;
 		knight.getAnimation().animate("Walk", -1, 1f, null, 0.2f);
     	skydome = new Actor3d(am.get("data/g3d/skydome.g3db", Model.class));
-    	floor.materials.get(0).set(TextureAttribute.createDiffuse(am.get("data/g3d/concrete.png", Texture.class)));
+    	floor.materials.get(0).set(TextureAttribute.createDiffuse(am.get("data/g3d/concrete.png", 
+    			Texture.class)));
     	stage3d.addActor3d(skydome);
 		stage3d.addActor3d(floor);
-		knight.rotate(0f, -90f, 0f);
+		knight.setPitch(-90f);
 		testActor3d();
 		//stage3d.addAction3d(Actions3d.rotateBy(0f, 90f, 0f, 2f));
     	//testGroup3d();
     	//testStage3d();
     }
     
-    //
+    float angle, angle2;
     @Override
     public void render () {
         Gdx.gl.glClearColor(1, 1, 1, 1);
@@ -166,20 +181,37 @@ public class Scene3dDemo implements ApplicationListener {
     	stage2d.act();
      	stage2d.draw();
     	camController.update();
-    	fpsText.setText("Fps: " + Gdx.graphics.getFramesPerSecond());
-    	visibleText.setText("Visible: " + stage3d.getRoot().visibleCount);
+    	fpsLabel.setText("Fps: " + Gdx.graphics.getFramesPerSecond());
+    	visibleLabel.setText("Visible: " + stage3d.getRoot().visibleCount);
+    	positionLabel.setText("Knight X:" + knight.getX()+" Y:"+knight.getY()+" Z:"+knight.getZ());
+    	rotationLabel.setText("Knight Yaw:" + knight.getYaw()+" Pitch:"+knight.getPitch()+" "
+    			+ "Roll:"+knight.getRoll());
+    	positionCameraLabel.setText("Camera X:" + stage3d.getCamera().position.x
+    			+" Y:"+stage3d.getCamera().position.y+" Z:"+stage3d.getCamera().position.z);
+    	rotationCameraLabel.setText("Camera Yaw:" + stage3d.getCamera().direction.x
+    			+" Pitch:"+stage3d.getCamera().direction.y+" "+ "Roll:"+stage3d.getCamera().direction.z);
+    	
+    	angle = MathUtils.cosDeg(knight.getYaw() - 90); //90 degrees is correction factor
+    	angle2 = -MathUtils.sinDeg(knight.getYaw() - 90);
 		if (upKey) {
-			knight.addAction3d(Actions3d.moveBy(1f, 0f, 0f, 1f));
+			knight.addAction3d(Actions3d.moveBy(angle, 0f, angle2, 1f));
 		} 
 		else if (downKey) {
-			knight.addAction3d(Actions3d.moveBy(-1f, 0f, 0f, 1f));
+			knight.addAction3d(Actions3d.moveBy(-angle, 0f, -angle2, 1f));
 		}
 		else if (rightKey) {
-			knight.rotateYaw(1f);
+			knight.rotateYaw(-2f);
 		} 
 		else if (leftKey) {
-			knight.rotateYaw(-1f);
+			knight.rotateYaw(2f);
 		} 
+		/* private float stateTime;
+		    float angleDegrees;
+		    stateTime+= delta;
+			angleDegrees = stateTime * 10.0f;
+			camera.position.set(200f * MathUtils.sinDeg(angleDegrees),
+				20, -200.0f * MathUtils.cosDeg(angleDegrees));
+			camera.rotate(Vector3.Y, angleDegrees/10f*delta);*/
     }
 
 	@Override
@@ -198,47 +230,14 @@ public class Scene3dDemo implements ApplicationListener {
 	public void dispose () {
 	   stage3d.dispose();
 	}
+	
     
-    final float GRID_MIN = -10f;
-	final float GRID_MAX = 10f;
-	final float GRID_STEP = 1f;
-	
-	// Must implement a better test
-	public Actor3d axesActor;
-	
-	private void createAxes() {
-		ModelBuilder modelBuilder = new ModelBuilder();
-		modelBuilder.begin();
-		MeshPartBuilder builder = modelBuilder.part("grid", GL10.GL_LINES, Usage.Position | Usage.Color, new Material());
-		builder.setColor(Color.LIGHT_GRAY);
-		for (float t = GRID_MIN; t <= GRID_MAX; t+=GRID_STEP) {
-			builder.line(t, 0, GRID_MIN, t, 0, GRID_MAX);
-			builder.line(GRID_MIN, 0, t, GRID_MAX, 0, t);
-		}
-		builder = modelBuilder.part("axes", GL10.GL_LINES, Usage.Position | Usage.Color, new Material());
-		builder.setColor(Color.RED);
-		builder.line(0, 0, 0, 100, 0, 0);
-		builder.setColor(Color.GREEN);
-		builder.line(0, 0, 0, 0, 100, 0);
-		builder.setColor(Color.BLUE);
-		builder.line(0, 0, 0, 0, 0, 100);
-		axesActor = new Actor3d(modelBuilder.end());
-		stage3d.addActor3d(axesActor);
-	}
-	
-	public void createLine(Vector3 p1, Vector3 p2, Color color) {		// by xiaozc
-		ModelBuilder modelBuilder = new ModelBuilder();
-		modelBuilder.begin();
-		MeshPartBuilder builder = modelBuilder.part("axes", GL10.GL_LINES, Usage.Position | Usage.Color, new Material());
-		builder.setColor(color);
-		builder.line(p1, p2);
-		Actor3d lineActor = new Actor3d(modelBuilder.end());
-		stage3d.addActor3d(lineActor);
-	}
-	
 	void testActor3d(){
     	stage3d.addActor3d(knight);
-    	stage3d.followActor3d(knight, true);
+    	//stage3d.moveCameraBy(20f, 0f, 0f, 5f);
+    	//stage3d.rotateCameraBy(0, 90, 0, 5f);
+    	stage3d.followOffset(20f, 20f, -20f);
+    	stage3d.followActor3d(knight, false);
     	//stage3d.moveBy(-50f, 0f, 0f, 2f);
         //stage3d.addActor3d(actor2);
     	//actor1.addAction3d(Actions3d.rotateTo(60f, 5f));

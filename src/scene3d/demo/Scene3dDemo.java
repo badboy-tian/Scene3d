@@ -16,6 +16,7 @@
 package scene3d.demo;
 
 import scene3d.Actor3d;
+import scene3d.Camera3d;
 import scene3d.Group3d;
 import scene3d.Stage3d;
 import scene3d.actions.Actions3d;
@@ -24,7 +25,6 @@ import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.Input.Keys;
@@ -156,7 +156,7 @@ public class Scene3dDemo implements ApplicationListener {
     	am.load("data/g3d/skydome.g3db", Model.class);
     	am.load("data/g3d/concrete.png", Texture.class);
     	am.finishLoading();
-    	knight = new Actor3d(am.get("data/g3d/knight.g3db", Model.class), -20f, 18f, 0f);
+    	knight = new Actor3d(am.get("data/g3d/knight.g3db", Model.class), 0f, 18f, 0f);
     	knight.getAnimation().inAction = true;
 		knight.getAnimation().animate("Walk", -1, 1f, null, 0.2f);
     	skydome = new Actor3d(am.get("data/g3d/skydome.g3db", Model.class));
@@ -165,6 +165,7 @@ public class Scene3dDemo implements ApplicationListener {
     	stage3d.addActor3d(skydome);
 		stage3d.addActor3d(floor);
 		knight.setPitch(-90f);
+		knight.setYaw(-130f);
 		testActor3d();
 		//stage3d.addAction3d(Actions3d.rotateBy(0f, 90f, 0f, 2f));
     	//testGroup3d();
@@ -194,16 +195,25 @@ public class Scene3dDemo implements ApplicationListener {
     	angle = MathUtils.cosDeg(knight.getYaw() - 90); //90 degrees is correction factor
     	angle2 = -MathUtils.sinDeg(knight.getYaw() - 90);
 		if (upKey) {
-			knight.addAction3d(Actions3d.moveBy(angle, 0f, angle2, 1f));
+			knight.addAction3d(Actions3d.moveBy(angle, 0f, angle2));
+			stage3d.getCamera().translate(angle, 0f, angle2);
 		} 
 		else if (downKey) {
-			knight.addAction3d(Actions3d.moveBy(-angle, 0f, -angle2, 1f));
+			knight.addAction3d(Actions3d.moveBy(-angle, 0f, -angle2));
+			stage3d.getCamera().translate(-angle, 0f, -angle2);
 		}
 		else if (rightKey) {
 			knight.rotateYaw(-2f);
+			if(stage3d.getCamera().direction.z > -0.76f)
+				Camera3d.rotateBy(-2f, 0f, 0f, 0f);
+			//stage3d.getCamera().translate(angle, 0f, angle2); //get the angle calculations rite to make
+			// the camera truly follow knight
 		} 
 		else if (leftKey) {
 			knight.rotateYaw(2f);
+			if(stage3d.getCamera().direction.z < -0.63f)
+				Camera3d.rotateBy(2f, 0f, 0f, 0f);
+			
 		} 
 		/* private float stateTime;
 		    float angleDegrees;
@@ -234,10 +244,11 @@ public class Scene3dDemo implements ApplicationListener {
     
 	void testActor3d(){
     	stage3d.addActor3d(knight);
-    	//stage3d.moveCameraBy(20f, 0f, 0f, 5f);
-    	//stage3d.rotateCameraBy(0, 90, 0, 5f);
-    	stage3d.followOffset(20f, 20f, -20f);
-    	stage3d.followActor3d(knight, false);
+    	stage3d.getCamera().position.set(knight.getX()+ 13f, knight.getY() + 24f, knight.getZ() + 45f);
+    	//stage3d.getCamera().lookAt(knight.getX(), knight.getY(), knight.getZ());
+    	//Camera3d.rotateCameraBy(knight.getYaw(), 0f, 0f, 1f);
+    	//Camera3d.followOffset(20f, 20f, -20f);
+    	//Camera3d.followActor3d(knight, false);
     	//stage3d.moveBy(-50f, 0f, 0f, 2f);
         //stage3d.addActor3d(actor2);
     	//actor1.addAction3d(Actions3d.rotateTo(60f, 5f));

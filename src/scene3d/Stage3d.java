@@ -1,45 +1,14 @@
-/*******************************************************************************
- * Copyright 2011 See AUTHORS file.
- * 
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * 
- *   http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- ******************************************************************************/
 package scene3d;
-
-import java.util.Iterator;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.graphics.Camera;
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.g3d.Environment;
-import com.badlogic.gdx.graphics.g3d.Material;
-import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
-import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
-import com.badlogic.gdx.graphics.g3d.model.MeshPart;
-import com.badlogic.gdx.graphics.g3d.model.Node;
-import com.badlogic.gdx.graphics.g3d.model.NodePart;
-import com.badlogic.gdx.math.Interpolation;
-import com.badlogic.gdx.math.Intersector;
-import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.math.Matrix4;
-import com.badlogic.gdx.math.Quaternion;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.math.collision.Ray;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.EventListener;
@@ -50,9 +19,7 @@ import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.SnapshotArray;
 
 public class Stage3d extends InputAdapter implements Disposable {
-	private float viewportX, viewportY, viewportWidth, viewportHeight;
 	private float width, height;
-	private float gutterWidth, gutterHeight;
 	private final ModelBatch modelBatch;
 	private Environment environment;
 
@@ -64,9 +31,6 @@ public class Stage3d extends InputAdapter implements Disposable {
 	
 	public Touchable touchable = Touchable.disabled;
 	private int selecting = -1;
-	private Actor3d selectedActor;
-	private Material selectionMaterial;
-    private Material originalMaterial;
     
     private boolean canHit = false;
 
@@ -92,20 +56,12 @@ public class Stage3d extends InputAdapter implements Disposable {
 
 		modelBatch = new ModelBatch();
 
-		camera =  new PerspectiveCamera(67, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-		camera.position.set(10f, 10f, 10f);
-		camera.lookAt(0,0,0);
-		camera.near = 0.1f;
-		camera.far = 300f;
-		camera.update();
+		camera =  new Camera3d();
 		environment = new Environment();
 		environment.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.9f, 0.9f, 0.9f, 1f));
 		environment.add(new DirectionalLight().set(0.8f, 0f, 0f, -1f, -0.8f, -0.2f));
 
 		setViewport(width, height, keepAspectRatio);
-	    selectionMaterial = new Material();
-	    selectionMaterial.set(ColorAttribute.createDiffuse(Color.ORANGE));
-	    originalMaterial = new Material();
 	}
 	
 	public Stage3d (float width, float height, PerspectiveCamera camera) {
@@ -152,10 +108,6 @@ public class Stage3d extends InputAdapter implements Disposable {
 	 * @param viewportHeight The height of the viewport in pixels. */
 	public void setViewport (float stageWidth, float stageHeight, boolean keepAspectRatio, float viewportX, float viewportY,
 			float viewportWidth, float viewportHeight) {
-		this.viewportX = viewportX;
-		this.viewportY = viewportY;
-		this.viewportWidth = viewportWidth;
-		this.viewportHeight = viewportHeight;
 		if (keepAspectRatio) {
 			if (viewportHeight / viewportWidth < stageHeight / stageWidth) {
 				float toViewportSpace = viewportHeight / stageHeight;
@@ -164,8 +116,6 @@ public class Stage3d extends InputAdapter implements Disposable {
 				float lengthen = (viewportWidth - deviceWidth) * toStageSpace;
 				this.width = stageWidth + lengthen;
 				this.height = stageHeight;
-				gutterWidth = lengthen / 2;
-				gutterHeight = 0;
 			} else {
 				float toViewportSpace = viewportWidth / stageWidth;
 				float toStageSpace = stageWidth / viewportWidth;
@@ -173,16 +123,11 @@ public class Stage3d extends InputAdapter implements Disposable {
 				float lengthen = (viewportHeight - deviceHeight) * toStageSpace;
 				this.height = stageHeight + lengthen;
 				this.width = stageWidth;
-				gutterWidth = 0;
-				gutterHeight = lengthen / 2;
 			}
 		} else {
 			this.width = stageWidth;
 			this.height = stageHeight;
-			gutterWidth = 0;
-			gutterHeight = 0;
 		}
-
 		camera.viewportWidth = this.width;
 		camera.viewportHeight = this.height;
 	}
@@ -204,7 +149,6 @@ public class Stage3d extends InputAdapter implements Disposable {
 	 * enter and exit events.
 	 * @param delta Time in seconds since the last frame. */
 	public void act(float delta) {
-		updateController(delta);
 		root.act(delta);
 	}
 
@@ -389,154 +333,6 @@ public class Stage3d extends InputAdapter implements Disposable {
          children.end();
          return temp;
     }
-    
-    
- 	private float offsetX = 10f, offsetY = 10f, offsetZ = 10f;
- 	private float folllowSpeed = 0.5f;
- 	private Actor3d followedActor3d;
- 	private boolean lookAt;
- 	
- 	/*
- 	 * The camera follows the actor3d as it moves along the scene
- 	 * @param actor3d The actor3d the camera has to follow , if it is null the camera stops following
- 	 * @param lookAt whether the camera should always be pointing to the actor3d
- 	 */
- 	public  void followActor3d(Actor3d actor3d, boolean lookAt){
- 		followedActor3d = actor3d;
- 		this.lookAt = lookAt;
- 	}
- 	
- 	/*
- 	 * This sets the distance between the camera and the actor
- 	 * @param offX the x distance from actor
- 	 * @param offY the y distance from actor
- 	 * @param offZ the z distance from actor
- 	 */
- 	public void followOffset(float offX, float offY, float offZ){
- 		offsetX = offX;
- 		offsetY = offY;
- 		offsetZ = offZ;
- 	}
-	
-    private static float moveDuration;
-    private static float moveTime;
-    private static boolean moveCompleted;
-    private static float moveLastPercent;
-    private static float panSpeedX, panSpeedY, panSpeedZ;
-    private static float movePercentDelta;
-    
-    private static float rotateTime;
-    private static float rotateDuration;
-    private static float rotateYaw, rotatePitch, rotateRoll;
-    private static boolean rotateCompleted;
-    private static float rotateLastPercent;
-    private static float rotatePercentDelta;
-    
-    public void moveCameraTo(float x, float y, float z, float duration) {
-        moveCameraBy(x-camera.position.x, y-camera.position.y, y-camera.position.y, duration);
-    }
-
-    public void moveCameraBy(float amountX, float amountY, float amountZ, float duration) {
-    	moveDuration = duration;
-     	panSpeedX = amountX;
-     	panSpeedY = amountY;
-     	panSpeedZ = amountZ;
-     	moveLastPercent = 0;
-     	moveTime = 0;
-        moveCompleted = false;
-    }
-   
-    /*
-     * rotates the pitch of camera (rotates camera around it's local x-axis) for viewing up and down
-     */
-    public void rotateCameraBy(float yaw, float pitch, float roll, float duration){
-    	rotateLastPercent = 0;
-    	rotateTime = 0;
-    	rotateYaw = yaw;
-    	rotatePitch = pitch;
-    	rotateRoll = roll;
-    	rotateDuration = duration;
-    	rotateCompleted = false;
-    }
-    
-	private void updateController(float delta){
-		if(!moveCompleted){
-			moveTime += delta;
-	        moveCompleted = moveTime >= moveDuration;
-	        float percent;
-	        if (moveCompleted)
-	           percent = 1;
-	        else {
-	            percent = moveTime / moveDuration;
-	        }
-	        movePercentDelta = percent - moveLastPercent;
-	    	camera.translate(panSpeedX * movePercentDelta, panSpeedY * movePercentDelta, panSpeedZ * movePercentDelta);
-	        moveLastPercent = percent;
-		}
-		if(!rotateCompleted){
-			rotateTime += delta;
-	    	rotateCompleted = rotateTime >= rotateDuration;
-	        float percent;
-	        if (rotateCompleted)
-	           percent = 1;
-	        else 
-	            percent = rotateTime / rotateDuration;
-	        rotatePercentDelta = percent - rotateLastPercent;
-	        camera.rotate(Vector3.Z, rotateYaw * rotatePercentDelta);
-	        camera.rotate(Vector3.X, rotatePitch * rotatePercentDelta);
-	        camera.rotate(Vector3.Y, rotateRoll * rotatePercentDelta);
-	        rotateLastPercent = percent;
-		}
-		if (followedActor3d != null) { 
-			moveCameraTo(followedActor3d.x+offsetX, followedActor3d.y+offsetY, followedActor3d.z+offsetZ, folllowSpeed);
-			if(lookAt)
-				camera.lookAt(followedActor3d.x, followedActor3d.y, followedActor3d.z);
-			/*
-			followedActor3d.getTransform().getTranslation(camera.direction);
-			current.set(position).sub(camera.direction);
-			desired.set(desiredLocation).rot(followedActor3d.getTransform()).add(desiredOffset);
-			final float desiredDistance = desired.len();
-			if (rotationSpeed < 0)
-				current.set(desired).nor().mul(desiredDistance);
-			else if (rotationSpeed == 0 || Vector3.tmp.set(current).dst2(desired) < rotationOffsetSq) 
-				current.nor().mul(desiredDistance);
-			else {
-				current.nor();
-				desired.nor();
-				rotationAxis.set(current).crs(desired);
-				float angle = (float)Math.acos(current.dot(desired)) * MathUtils.radiansToDegrees;
-				final float maxAngle = rotationSpeed * delta;
-				if (Math.abs(angle) > maxAngle) {
-					angle = (angle < 0) ? -maxAngle : maxAngle;
-				}
-				current.rot(rotationMatrix.idt().rotate(rotationAxis, angle));
-				current.mul(desiredDistance);
-			}
-
-			current.add(camera.direction);
-			absoluteSpeed = Math.min(absoluteSpeed + acceleration, current.dst(position) / delta);
-			position.add(speed.set(current).sub(position).nor().mul(absoluteSpeed * delta));
-			if (bounds.isValid()) {
-				if (position.x < bounds.min.x) position.x = bounds.min.x;
-				if (position.x > bounds.max.x) position.x = bounds.max.x;
-				if (position.y < bounds.min.y) position.y = bounds.min.y;
-				if (position.y > bounds.max.y) position.y = bounds.max.y;
-				if (position.z < bounds.min.z) position.z = bounds.min.z;
-				if (position.z > bounds.max.z) position.z = bounds.max.z;
-			}
-			if (offsetBounds.isValid()) {
-				Vector3.tmp.set(position).sub(camera.direction);
-				if (Vector3.tmp.x < offsetBounds.min.x) position.x = offsetBounds.min.x + camera.direction.x;
-				if (Vector3.tmp.x > offsetBounds.max.x) position.x = offsetBounds.max.x + camera.direction.x;
-				if (Vector3.tmp.y < offsetBounds.min.y) position.y = offsetBounds.min.y + camera.direction.y;
-				if (Vector3.tmp.y > offsetBounds.max.y) position.y = offsetBounds.max.y + camera.direction.y;
-				if (Vector3.tmp.z < offsetBounds.min.z) position.z = offsetBounds.min.z + camera.direction.z;
-				if (Vector3.tmp.z > offsetBounds.max.z) position.z = offsetBounds.max.z + camera.direction.z;
-			}
-			camera.direction.add(target.set(targetLocation)
-			.rot(followedActor3d.getTransform()).add(targetOffset)).sub(position).nor();*/
-		}
-	}
 
 	@Override
 	public void dispose() {
